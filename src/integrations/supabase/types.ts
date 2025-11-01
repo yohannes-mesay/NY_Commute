@@ -14,7 +14,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      CCCBoxcarFares: {
+      cccboxcarfares: {
         Row: {
           boxcar_route: string
           boxcar_station: string | null
@@ -53,7 +53,7 @@ export type Database = {
         }
         Relationships: []
       }
-      CCCCommuteFormInputs: {
+      ccccommuteforminputs: {
         Row: {
           commute_days_per_week: number | null
           commute_method: string | null
@@ -95,7 +95,7 @@ export type Database = {
         }
         Relationships: []
       }
-      CCCDrivingCostReference: {
+      cccdrivingcostreference: {
         Row: {
           congestion_fee: number | null
           distance_roundtrip: number | null
@@ -128,7 +128,7 @@ export type Database = {
         }
         Relationships: []
       }
-      CCCNJTransitFares: {
+      cccnjtrafares: {
         Row: {
           daily_one_way: number | null
           daily_round_trip: number | null
@@ -161,7 +161,7 @@ export type Database = {
         }
         Relationships: []
       }
-      CommutingData: {
+      commutingdata: {
         Row: {
           congestion_pricing: boolean | null
           date: string | null
@@ -214,7 +214,7 @@ export type Database = {
           },
         ]
       }
-      RouteIDs: {
+      routeids: {
         Row: {
           alt_route_name: string | null
           finish_address: string | null

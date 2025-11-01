@@ -1,172 +1,243 @@
-
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
-import { supabase } from "@/integrations/supabase/client";
+import { useCommuteData } from "@/hooks/useCommuteData";
+import type { CommuteDataRow } from "@/lib/api";
 
 interface TrafficChartProps {
-  timeFilter: 'morning' | 'afternoon';
+  timeFilter: "morning" | "afternoon";
 }
 
 interface ChartDataPoint {
-  date: string;
-  duration: number;
-  isPre: boolean;
+  time: string;
+  preDuration: number | null;
+  postDuration: number | null;
 }
 
 interface RouteData {
   name: string;
-  color: string;
-  bgColor: string;
+  startingPoint: string | null;
+  finishPoint: string | null;
   data: ChartDataPoint[];
-  avgDuration: number;
-  changePercent: number;
+  preAvgDuration: number | null;
+  postAvgDuration: number | null;
+  changePercent: number | null;
 }
+
+type CommutingRecord = CommuteDataRow;
+
+const timeRegex = /^(\d{1,2}):(\d{2})(?:\s?(AM|PM))?$/i;
+
+const parseTimeToMinutes = (value: string): number => {
+  const match = value.match(timeRegex);
+  if (match) {
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const period = match[3]?.toUpperCase();
+
+    if (period === "PM" && hours !== 12) {
+      hours += 12;
+    }
+    if (period === "AM" && hours === 12) {
+      hours = 0;
+    }
+
+    return hours * 60 + minutes;
+  }
+
+  const parsedDate = Date.parse(value);
+  if (!Number.isNaN(parsedDate)) {
+    const date = new Date(parsedDate);
+    return date.getHours() * 60 + date.getMinutes();
+  }
+
+  return Number.MAX_SAFE_INTEGER;
+};
+
+const formatTimeLabel = (value: string): string => {
+  const match = value.match(timeRegex);
+  if (match) {
+    let hours = parseInt(match[1], 10);
+    const minutes = match[2];
+    let period = (match[3] || "AM").toUpperCase();
+
+    if (!match[3]) {
+      period = hours >= 12 ? "PM" : "AM";
+      if (hours === 0) {
+        hours = 12;
+      } else if (hours > 12) {
+        hours -= 12;
+      }
+    }
+
+    return `${hours}:${minutes} ${period}`;
+  }
+
+  const parsedDate = Date.parse(value);
+  if (!Number.isNaN(parsedDate)) {
+    return new Date(parsedDate).toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  return value;
+};
 
 export const TrafficChart = ({ timeFilter }: TrafficChartProps) => {
   const [processedData, setProcessedData] = useState<RouteData[]>([]);
 
-  // Fetch commuting data from Supabase
-  const { data: commutingData, isLoading, error } = useQuery({
-    queryKey: ['commuting-data', timeFilter],
-    queryFn: async () => {
-      console.log('Fetching commuting data for timeFilter:', timeFilter);
-      console.log('Supabase client:', supabase);
-      
-      // First, let's check if we can access the table at all
-      const { data: testData, error: testError } = await supabase
-        .from('CommutingData')
-        .select('*')
-        .limit(5);
-      
-      console.log('Test query result:', { testData, testError });
-      
-      // Now the main query
-      const { data, error } = await supabase
-        .from('CommutingData')
-        .select('*')
-        .eq('is_commuting_day', true)
-        .eq('is_morning', timeFilter === 'morning')
-        .not('duration_minutes', 'is', null)
-        .order('date', { ascending: true });
+  const { data: commutingData, isLoading, error } = useCommuteData(timeFilter);
 
-      console.log('Main query result:', { data, error, dataLength: data?.length });
-
-      if (error) {
-        console.error('Error fetching commuting data:', error);
-        throw error;
-      }
-
-      console.log('Fetched commuting data:', data?.length, 'records');
-      console.log('Sample data:', data?.slice(0, 3));
-      return data;
-    }
-  });
-
-  // Process the data when it changes
   useEffect(() => {
     if (error) {
-      console.error('Query error:', error);
       return;
     }
 
     if (!commutingData) {
-      console.log('No commuting data available (undefined/null)');
       setProcessedData([]);
       return;
     }
 
-    if (commutingData.length === 0) {
-      console.log('No commuting data available (empty array)');
+    type ValidRecord = CommutingRecord & { duration_minutes: number };
+
+    const filteredRecords = commutingData.filter(
+      (record): record is ValidRecord =>
+        record.is_commuting_day === true && record.duration_minutes !== null
+    );
+
+    const groupedByRoute = filteredRecords.reduce(
+      (acc, item) => {
+        const routeKey = item.route_name || "Unknown Route";
+        if (!acc[routeKey]) {
+          acc[routeKey] = {
+            records: [],
+            startingPoint: item.routeids?.starting_point ?? null,
+            finishPoint: item.routeids?.finish_point ?? null,
+          };
+        }
+        acc[routeKey].records.push(item);
+        if (acc[routeKey].startingPoint === null) {
+          acc[routeKey].startingPoint = item.routeids?.starting_point ?? null;
+        }
+        if (acc[routeKey].finishPoint === null) {
+          acc[routeKey].finishPoint = item.routeids?.finish_point ?? null;
+        }
+        return acc;
+      },
+      {} as Record<
+        string,
+        {
+          records: ValidRecord[];
+          startingPoint: string | null;
+          finishPoint: string | null;
+        }
+      >
+    );
+
+    if (filteredRecords.length === 0) {
       setProcessedData([]);
       return;
     }
-
-    console.log('Processing commuting data...', commutingData.length, 'records');
-
-    // Group by route and calculate daily averages
-    const routeGroups: { [key: string]: any[] } = {};
-    
-    commutingData.forEach(record => {
-      const routeName = record.route_name || 'Unknown Route';
-      if (!routeGroups[routeName]) {
-        routeGroups[routeName] = [];
-      }
-      routeGroups[routeName].push(record);
-    });
-
-    console.log('Route groups:', Object.keys(routeGroups));
-
-    // Define region mapping and colors
-    const regionMapping: { [key: string]: { name: string; color: string; bgColor: string } } = {
-      'New Jersey': { name: 'New Jersey', color: 'rgb(239, 68, 68)', bgColor: 'rgba(239, 68, 68, 0.1)' },
-      'Connecticut': { name: 'Connecticut', color: 'rgb(34, 197, 94)', bgColor: 'rgba(34, 197, 94, 0.1)' },
-      'Long Island': { name: 'Long Island', color: 'rgb(168, 85, 247)', bgColor: 'rgba(168, 85, 247, 0.1)' }
-    };
 
     const processedRoutes: RouteData[] = [];
 
-    Object.entries(routeGroups).forEach(([routeName, records]) => {
-      // Try to map route to region (simple string matching)
-      let regionInfo = regionMapping['New Jersey']; // default
-      
-      if (routeName.toLowerCase().includes('connecticut') || routeName.toLowerCase().includes('ct')) {
-        regionInfo = regionMapping['Connecticut'];
-      } else if (routeName.toLowerCase().includes('island') || routeName.toLowerCase().includes('li')) {
-        regionInfo = regionMapping['Long Island'];
-      } else if (routeName.toLowerCase().includes('jersey') || routeName.toLowerCase().includes('nj')) {
-        regionInfo = regionMapping['New Jersey'];
+    Object.entries(groupedByRoute).forEach(
+      ([routeName, { records, startingPoint, finishPoint }]) => {
+        const timeBuckets: Record<
+          string,
+          {
+            preTotal: number;
+            preCount: number;
+            postTotal: number;
+            postCount: number;
+          }
+        > = {};
+
+        records.forEach((record) => {
+          const timeKey = record.rounded_time || record.time || record.date;
+          if (!timeBuckets[timeKey]) {
+            timeBuckets[timeKey] = {
+              preTotal: 0,
+              preCount: 0,
+              postTotal: 0,
+              postCount: 0,
+            };
+          }
+
+          if (record.congestion_pricing) {
+            timeBuckets[timeKey].postTotal += record.duration_minutes;
+            timeBuckets[timeKey].postCount += 1;
+          } else {
+            timeBuckets[timeKey].preTotal += record.duration_minutes;
+            timeBuckets[timeKey].preCount += 1;
+          }
+        });
+
+        const chartData: ChartDataPoint[] = Object.entries(timeBuckets)
+          .map(([time, aggregate]) => ({
+            time,
+            preDuration:
+              aggregate.preCount > 0
+                ? Math.round(aggregate.preTotal / aggregate.preCount)
+                : null,
+            postDuration:
+              aggregate.postCount > 0
+                ? Math.round(aggregate.postTotal / aggregate.postCount)
+                : null,
+          }))
+          .sort(
+            (a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time)
+          );
+
+        const preDurations = chartData
+          .map((point) => point.preDuration)
+          .filter((value): value is number => value !== null);
+
+        const postDurations = chartData
+          .map((point) => point.postDuration)
+          .filter((value): value is number => value !== null);
+
+        const preAvg =
+          preDurations.length > 0
+            ? Math.round(
+                preDurations.reduce((sum, value) => sum + value, 0) /
+                  preDurations.length
+              )
+            : null;
+
+        const postAvg =
+          postDurations.length > 0
+            ? Math.round(
+                postDurations.reduce((sum, value) => sum + value, 0) /
+                  postDurations.length
+              )
+            : null;
+
+        const changePercent =
+          preAvg !== null && postAvg !== null && preAvg > 0
+            ? Math.round(((postAvg - preAvg) / preAvg) * 100)
+            : null;
+
+        processedRoutes.push({
+          name: routeName,
+          startingPoint,
+          finishPoint,
+          data: chartData,
+          preAvgDuration: preAvg,
+          postAvgDuration: postAvg,
+          changePercent,
+        });
       }
+    );
 
-      // Group by date and calculate daily averages
-      const dailyData: { [key: string]: { total: number; count: number; isPre: boolean } } = {};
-      
-      records.forEach(record => {
-        const date = record.date;
-        const duration = record.duration_minutes;
-        const isPre = !record.congestion_pricing;
-        
-        if (!dailyData[date]) {
-          dailyData[date] = { total: 0, count: 0, isPre };
-        }
-        
-        dailyData[date].total += duration;
-        dailyData[date].count += 1;
-      });
-
-      // Convert to chart data points
-      const chartData: ChartDataPoint[] = Object.entries(dailyData)
-        .map(([date, data]) => ({
-          date,
-          duration: Math.round(data.total / data.count),
-          isPre: data.isPre
-        }))
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-      // Calculate average and change percentage
-      const preData = chartData.filter(d => d.isPre);
-      const postData = chartData.filter(d => !d.isPre);
-      
-      const preAvg = preData.length > 0 ? preData.reduce((sum, d) => sum + d.duration, 0) / preData.length : 0;
-      const postAvg = postData.length > 0 ? postData.reduce((sum, d) => sum + d.duration, 0) / postData.length : 0;
-      
-      const changePercent = preAvg > 0 ? Math.round(((postAvg - preAvg) / preAvg) * 100) : 0;
-
-      processedRoutes.push({
-        name: regionInfo.name,
-        color: regionInfo.color,
-        bgColor: regionInfo.bgColor,
-        data: chartData,
-        avgDuration: Math.round((preAvg + postAvg) / 2),
-        changePercent
-      });
-    });
-
-    console.log('Processed routes:', processedRoutes.length);
     setProcessedData(processedRoutes);
-  }, [commutingData, error]);
+  }, [commutingData, error, timeFilter]);
 
   const chartConfig = {
     duration: {
@@ -194,7 +265,9 @@ export const TrafficChart = ({ timeFilter }: TrafficChartProps) => {
         {[1, 2, 3].map((i) => (
           <Card key={i} className="bg-slate-700/30 border-slate-600 p-4">
             <div className="h-48 flex items-center justify-center">
-              <p className="text-red-400">Error loading data: {error.message}</p>
+              <p className="text-red-400">
+                Error loading data: {error.message}
+              </p>
             </div>
           </Card>
         ))}
@@ -226,58 +299,86 @@ export const TrafficChart = ({ timeFilter }: TrafficChartProps) => {
       {processedData.map((route) => (
         <Card key={route.name} className="bg-slate-700/30 border-slate-600 p-4">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-white">{route.name}</h3>
-            <p className="text-sm text-gray-400 capitalize">{timeFilter} Commute</p>
+            <h3 className="text-lg font-semibold text-white">
+              {route.startingPoint && route.finishPoint
+                ? `${route.startingPoint} → ${route.finishPoint}`
+                : route.name}
+            </h3>
+            <p className="text-sm text-gray-400 capitalize">
+              {timeFilter} Commute
+            </p>
           </div>
-          
+
           <div className="h-48 mb-3">
             <ChartContainer config={chartConfig} className="h-full w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={route.data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                <LineChart
+                  data={route.data}
+                  margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+                >
+                  <XAxis
+                    dataKey="time"
+                    tick={{ fontSize: 10, fill: "#9CA3AF" }}
                     tickFormatter={(value) => {
-                      const date = new Date(value);
-                      return `${date.getMonth() + 1}/${date.getDate()}`;
+                      return formatTimeLabel(value as string);
                     }}
                   />
-                  <YAxis 
-                    tick={{ fontSize: 10, fill: '#9CA3AF' }}
-                    domain={['dataMin - 5', 'dataMax + 5']}
+                  <YAxis
+                    tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                    domain={["dataMin - 5", "dataMax + 5"]}
                   />
-                  <ChartTooltip 
+                  <ChartTooltip
                     content={<ChartTooltipContent />}
-                    labelFormatter={(value) => {
-                      const date = new Date(value);
-                      return date.toLocaleDateString();
-                    }}
+                    labelFormatter={(value) => formatTimeLabel(value as string)}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="duration" 
-                    stroke={route.color}
+                  <Line
+                    type="monotone"
+                    dataKey="preDuration"
+                    stroke="#4A90E2"
                     strokeWidth={2}
                     dot={false}
-                    connectNulls={false}
+                    connectNulls
+                    name="Pre-congestion-"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="postDuration"
+                    stroke="#2DD4BF"
+                    strokeWidth={2}
+                    dot={false}
+                    connectNulls
+                    name="Post-congestion-"
                   />
                 </LineChart>
               </ResponsiveContainer>
             </ChartContainer>
           </div>
-          
+
           <div className="text-xs text-gray-500">
-            <div className="flex justify-between">
-              <span>Avg: ~{route.avgDuration} min</span>
-              <span className={route.changePercent > 0 ? 'text-red-400' : 'text-green-400'}>
-                Change: {route.changePercent > 0 ? '+' : ''}{route.changePercent}%
-              </span>
+            <div className="flex justify-between text-sm text-gray-300">
+              <p className="flex items-center gap-1 w-full">
+                <span className="w-5 h-1 bg-[#4A90E2] rounded-full inline-block mr-1" />
+                <span className="text-gray-300 text-xs">
+                  Pre-congestion pricing
+                </span>
+              </p>
+              <p className="flex items-center gap-1 w-full">
+                <span className="w-5 h-1 bg-[#2DD4BF] rounded-full inline-block mr-1" />
+                <span className="text-gray-300 text-xs">
+                  Post-congestion pricing
+                </span>
+              </p>
             </div>
-            <div className="mt-1 text-center">
-              <span className="text-red-400">●</span> Pre-Jan 5 
-              <span className="mx-2">|</span>
-              <span className="text-blue-400">●</span> Post-Jan 5
-            </div>
+            {route.changePercent !== null && (
+              <div
+                className={`mt-1 text-right ${
+                  route.changePercent > 0 ? "text-red-400" : "text-green-400"
+                }`}
+              >
+                Change: {route.changePercent > 0 ? "+" : ""}
+                {route.changePercent}%
+              </div>
+            )}
           </div>
         </Card>
       ))}

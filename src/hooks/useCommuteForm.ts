@@ -1,22 +1,58 @@
-
 import { useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { CommuteFormData, CommuteResults } from "@/types/commute";
 import { calculateMockResults } from "@/utils/commuteCalculations";
 
 // Zod validation schema for commute form inputs
 const commuteFormSchema = z.object({
-  commute_origin: z.string().trim().min(1, "Origin is required").max(200, "Origin must be less than 200 characters"),
-  commute_method: z.string().trim().min(1, "Commute method is required").max(100, "Method must be less than 100 characters"),
-  departure_time: z.string().trim().min(1, "Departure time is required").max(50, "Time must be less than 50 characters"),
-  commute_days_per_week: z.number().int().min(1, "Must commute at least 1 day").max(7, "Cannot exceed 7 days per week"),
-  office_address: z.string().trim().min(1, "Office address is required").max(500, "Address must be less than 500 characters"),
-  ranking_cost: z.number().int().min(1, "Ranking must be between 1 and 4").max(4, "Ranking must be between 1 and 4"),
-  ranking_comfort: z.number().int().min(1, "Ranking must be between 1 and 4").max(4, "Ranking must be between 1 and 4"),
-  ranking_on_time: z.number().int().min(1, "Ranking must be between 1 and 4").max(4, "Ranking must be between 1 and 4"),
-  ranking_relaxation: z.number().int().min(1, "Ranking must be between 1 and 4").max(4, "Ranking must be between 1 and 4")
+  commute_origin: z
+    .string()
+    .trim()
+    .min(1, "Origin is required")
+    .max(200, "Origin must be less than 200 characters"),
+  commute_method: z
+    .string()
+    .trim()
+    .min(1, "Commute method is required")
+    .max(100, "Method must be less than 100 characters"),
+  departure_time: z
+    .string()
+    .trim()
+    .min(1, "Departure time is required")
+    .max(50, "Time must be less than 50 characters"),
+  commute_days_per_week: z
+    .number()
+    .int()
+    .min(1, "Must commute at least 1 day")
+    .max(7, "Cannot exceed 7 days per week"),
+  office_address: z
+    .string()
+    .trim()
+    .min(1, "Office address is required")
+    .max(500, "Address must be less than 500 characters"),
+  ranking_cost: z
+    .number()
+    .int()
+    .min(1, "Ranking must be between 1 and 4")
+    .max(4, "Ranking must be between 1 and 4"),
+  ranking_comfort: z
+    .number()
+    .int()
+    .min(1, "Ranking must be between 1 and 4")
+    .max(4, "Ranking must be between 1 and 4"),
+  ranking_on_time: z
+    .number()
+    .int()
+    .min(1, "Ranking must be between 1 and 4")
+    .max(4, "Ranking must be between 1 and 4"),
+  ranking_relaxation: z
+    .number()
+    .int()
+    .min(1, "Ranking must be between 1 and 4")
+    .max(4, "Ranking must be between 1 and 4"),
 });
 
 export const useCommuteForm = () => {
@@ -29,7 +65,7 @@ export const useCommuteForm = () => {
     ranking_cost: "",
     ranking_comfort: "",
     ranking_on_time: "",
-    ranking_relaxation: ""
+    ranking_relaxation: "",
   });
 
   const [results, setResults] = useState<CommuteResults | null>(null);
@@ -38,22 +74,22 @@ export const useCommuteForm = () => {
 
   const handleSubmit = async () => {
     setIsLoading(true);
-    
+
     try {
       // Validate rankings are unique
       const rankings = [
         formData.ranking_cost,
         formData.ranking_comfort,
         formData.ranking_on_time,
-        formData.ranking_relaxation
-      ].filter(r => r !== "");
-      
+        formData.ranking_relaxation,
+      ].filter((r) => r !== "");
+
       const uniqueRankings = new Set(rankings);
       if (rankings.length !== uniqueRankings.size) {
         toast({
           title: "Invalid Rankings",
           description: "Each ranking must be unique (1-4, no duplicates)",
-          variant: "destructive"
+          variant: "destructive",
         });
         setIsLoading(false);
         return;
@@ -69,7 +105,7 @@ export const useCommuteForm = () => {
         ranking_cost: parseInt(formData.ranking_cost),
         ranking_comfort: parseInt(formData.ranking_comfort),
         ranking_on_time: parseInt(formData.ranking_on_time),
-        ranking_relaxation: parseInt(formData.ranking_relaxation)
+        ranking_relaxation: parseInt(formData.ranking_relaxation),
       };
 
       // Validate input with zod schema
@@ -77,11 +113,13 @@ export const useCommuteForm = () => {
         commuteFormSchema.parse(insertPayload);
       } catch (validationError) {
         if (validationError instanceof z.ZodError) {
-          const errorMessages = validationError.errors.map(err => err.message).join(", ");
+          const errorMessages = validationError.errors
+            .map((err) => err.message)
+            .join(", ");
           toast({
             title: "Invalid Input",
             description: errorMessages,
-            variant: "destructive"
+            variant: "destructive",
           });
           setIsLoading(false);
           return;
@@ -90,16 +128,23 @@ export const useCommuteForm = () => {
       }
 
       // Insert validated data into database
+      type CommuteInsert =
+        Database["public"]["Tables"]["ccccommuteforminputs"]["Insert"];
+      const dbPayload: CommuteInsert = {
+        ...insertPayload,
+        created_at: new Date().toISOString(),
+      };
+
       const { data, error } = await supabase
-        .from('CCCCommuteFormInputs')
-        .insert([insertPayload as any])
+        .from("ccccommuteforminputs")
+        .insert([dbPayload])
         .select();
 
       if (error) {
         toast({
           title: "Database Error",
           description: `Failed to save: ${error.message}`,
-          variant: "destructive"
+          variant: "destructive",
         });
         setIsLoading(false);
         return;
@@ -108,22 +153,23 @@ export const useCommuteForm = () => {
       // Calculate costs (mock data for now)
       const mockResults = calculateMockResults(formData);
       setResults(mockResults);
-      
+
       toast({
         title: "Success!",
-        description: "Your preferences have been saved and cost comparison is ready!",
+        description:
+          "Your preferences have been saved and cost comparison is ready!",
       });
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+
       toast({
         title: "Unexpected Error",
         description: errorMessage,
-        variant: "destructive"
+        variant: "destructive",
       });
     }
-    
+
     setIsLoading(false);
   };
 
@@ -132,6 +178,6 @@ export const useCommuteForm = () => {
     setFormData,
     results,
     isLoading,
-    handleSubmit
+    handleSubmit,
   };
 };
