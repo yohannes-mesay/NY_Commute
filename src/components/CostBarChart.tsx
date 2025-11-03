@@ -18,7 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useCommuteCostCalculator } from "@/hooks/useCostSalary";
+import { useCostComparison } from "@/hooks/useCostComparison";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Payload } from "recharts/types/component/DefaultTooltipContent";
 
@@ -76,7 +76,15 @@ export const CostBarChart = ({
   commuteOrigin,
   commuteDaysPerWeek,
 }: CostBarChartProps) => {
-  const { calculateCosts, isPending, error } = useCommuteCostCalculator();
+  const { data, isLoading, error } = useCostComparison(
+    commuteOrigin,
+    commuteDaysPerWeek,
+    {
+      enabled: Boolean(
+        commuteOrigin && commuteDaysPerWeek && commuteDaysPerWeek > 0
+      ),
+    }
+  );
   const [chartData, setChartData] = useState<ChartDataItem[]>([]);
 
   useEffect(() => {
@@ -85,85 +93,75 @@ export const CostBarChart = ({
       return;
     }
 
-    calculateCosts(
-      {
-        commute_origin: commuteOrigin,
-        commute_days_per_week: commuteDaysPerWeek,
-      },
-      {
-        onSuccess: (data) => {
-          const items: ChartDataItem[] = [
-            {
-              mode: "njTransit",
-              label: MODE_LABELS.njTransit,
-              value:
-                typeof data.daily.njTransit === "number"
-                  ? data.daily.njTransit * commuteDaysPerWeek
-                  : null,
-              color: MODE_COLORS.njTransit,
-              isAvailable: typeof data.daily.njTransit === "number",
-            },
-            {
-              mode: "boxcar",
-              label: MODE_LABELS.boxcar,
-              value:
-                typeof data.daily.boxcar === "number"
-                  ? data.daily.boxcar * commuteDaysPerWeek
-                  : null,
-              color: MODE_COLORS.boxcar,
-              isAvailable: typeof data.daily.boxcar === "number",
-            },
-            {
-              mode: "boxcarMember",
-              label: MODE_LABELS.boxcarMember,
-              value:
-                typeof data.daily.boxcarMember === "number"
-                  ? data.daily.boxcarMember * commuteDaysPerWeek
-                  : null,
-              color: MODE_COLORS.boxcarMember,
-              isAvailable: typeof data.daily.boxcarMember === "number",
-            },
-            {
-              mode: "selfDrive",
-              label: MODE_LABELS.selfDrive,
-              value:
-                typeof data.daily.selfDrive === "number"
-                  ? data.daily.selfDrive * commuteDaysPerWeek
-                  : null,
-              color: MODE_COLORS.selfDrive,
-              isAvailable: typeof data.daily.selfDrive === "number",
-            },
-            {
-              mode: "uber",
-              label: MODE_LABELS.uber,
-              value:
-                typeof data.daily.uber === "number"
-                  ? data.daily.uber * commuteDaysPerWeek
-                  : null,
-              color: MODE_COLORS.uber,
-              isAvailable: typeof data.daily.uber === "number",
-            },
-            {
-              mode: "luxuryCar",
-              label: MODE_LABELS.luxuryCar,
-              value:
-                typeof data.daily.luxuryCar === "number"
-                  ? data.daily.luxuryCar * commuteDaysPerWeek
-                  : null,
-              color: MODE_COLORS.luxuryCar,
-              isAvailable: typeof data.daily.luxuryCar === "number",
-            },
-          ];
+    if (data) {
+      const items: ChartDataItem[] = [
+        {
+          mode: "njTransit",
+          label: MODE_LABELS.njTransit,
+          value:
+            typeof data.daily.njTransit === "number"
+              ? data.daily.njTransit * commuteDaysPerWeek
+              : null,
+          color: MODE_COLORS.njTransit,
+          isAvailable: typeof data.daily.njTransit === "number",
+        },
+        {
+          mode: "boxcar",
+          label: MODE_LABELS.boxcar,
+          value:
+            typeof data.daily.boxcar === "number"
+              ? data.daily.boxcar * commuteDaysPerWeek
+              : null,
+          color: MODE_COLORS.boxcar,
+          isAvailable: typeof data.daily.boxcar === "number",
+        },
+        {
+          mode: "boxcarMember",
+          label: MODE_LABELS.boxcarMember,
+          value:
+            typeof data.daily.boxcarMember === "number"
+              ? data.daily.boxcarMember * commuteDaysPerWeek
+              : null,
+          color: MODE_COLORS.boxcarMember,
+          isAvailable: typeof data.daily.boxcarMember === "number",
+        },
+        {
+          mode: "selfDrive",
+          label: MODE_LABELS.selfDrive,
+          value:
+            typeof data.daily.selfDrive === "number"
+              ? data.daily.selfDrive * commuteDaysPerWeek
+              : null,
+          color: MODE_COLORS.selfDrive,
+          isAvailable: typeof data.daily.selfDrive === "number",
+        },
+        {
+          mode: "uber",
+          label: MODE_LABELS.uber,
+          value:
+            typeof data.daily.uber === "number"
+              ? data.daily.uber * commuteDaysPerWeek
+              : null,
+          color: MODE_COLORS.uber,
+          isAvailable: typeof data.daily.uber === "number",
+        },
+        {
+          mode: "luxuryCar",
+          label: MODE_LABELS.luxuryCar,
+          value:
+            typeof data.daily.luxuryCar === "number"
+              ? data.daily.luxuryCar * commuteDaysPerWeek
+              : null,
+          color: MODE_COLORS.luxuryCar,
+          isAvailable: typeof data.daily.luxuryCar === "number",
+        },
+      ];
 
-          setChartData(items);
-        },
-        onError: () => {
-          setChartData([]);
-        },
-      }
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [commuteOrigin, commuteDaysPerWeek]);
+      setChartData(items);
+    } else {
+      setChartData([]);
+    }
+  }, [data, commuteOrigin, commuteDaysPerWeek]);
 
   const availableData = chartData.filter((item) => item.isAvailable);
 
@@ -179,7 +177,7 @@ export const CostBarChart = ({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {isPending ? (
+        {isLoading ? (
           <div className="h-96 flex items-center justify-center">
             <div className="space-y-4 w-full">
               <Skeleton className="h-12 w-full bg-slate-700/60" />
@@ -238,7 +236,10 @@ export const CostBarChart = ({
                     fill="#e5e7eb"
                     fontSize={11}
                     fontWeight={500}
-                    formatter={(value: number | null, payload: Payload<number, string>) => {
+                    formatter={(
+                      value: number | null,
+                      payload: Payload<number, string>
+                    ) => {
                       const entry = payload as ChartDataItem;
                       return entry?.isAvailable && value !== null
                         ? `$${value.toFixed(2)}`

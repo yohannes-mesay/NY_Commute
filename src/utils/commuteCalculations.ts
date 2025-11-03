@@ -1,57 +1,70 @@
 import { CommuteFormData, CommuteResults } from "@/types/commute";
 import type { CostResults } from "@/lib/api";
 
+type RecommendationResult = {
+  recommended: "NJ Transit" | "Boxcar" | "Uber" | "Self Drive";
+  scores: Record<string, number>;
+  rawScores: Record<string, number>;
+};
+
+export const computeRecommendation = (
+  formData: CommuteFormData
+): RecommendationResult => {
+  const MAX_RANK = 4;
+  const WEIGHTS = {
+    "NJ Transit": { cost: 4, comfort: 1, onTime: 1, stress: 1 },
+    Boxcar: { cost: 2, comfort: 4, onTime: 3, stress: 4 },
+    Uber: { cost: 1, comfort: 4, onTime: 3, stress: 3 },
+    "Self Drive": { cost: 3, comfort: 2, onTime: 4, stress: 1 },
+  } as const;
+ 
+
+  const userRanks = {
+    cost: parseInt(formData.ranking_cost),
+    comfort: parseInt(formData.ranking_comfort),
+    onTime: parseInt(formData.ranking_on_time),
+    stress: parseInt(formData.ranking_stress),
+  };
+  
+  const userPriorities = {
+    cost: MAX_RANK + 1 - userRanks.cost,
+    comfort: MAX_RANK + 1 - userRanks.comfort,
+    onTime: MAX_RANK + 1 - userRanks.onTime,
+    stress: MAX_RANK + 1 - userRanks.stress,
+  };
+  const rawScores: Record<string, number> = {};
+  (Object.keys(WEIGHTS) as Array<keyof typeof WEIGHTS>).forEach((method) => {
+    const w = WEIGHTS[method];
+    rawScores[method] =
+      w.cost * userPriorities.cost +
+      w.comfort * userPriorities.comfort +
+      w.onTime * userPriorities.onTime +
+      w.stress * userPriorities.stress;
+  });
+
+  const recommended = (
+    Object.keys(rawScores) as Array<keyof typeof rawScores>
+  ).reduce((a, b) =>
+    rawScores[a] > rawScores[b] ? a : b
+  ) as RecommendationResult["recommended"];
+
+  const maxScore = Math.max(...Object.values(rawScores));
+  const scores: Record<string, number> = {};
+  Object.entries(rawScores).forEach(([k, v]) => {
+    scores[k] = maxScore > 0 ? v / maxScore : 0;
+  });
+  console.log("scores");
+  console.log(scores);
+  return { recommended, scores, rawScores };
+};
+
 export const determineRecommendation = (
   data: CommuteFormData,
-  costData: CostResults
+  _costData: CostResults
 ): { method: string; reason: string } => {
-  const costRank = parseInt(data.ranking_cost);
-  const comfortRank = parseInt(data.ranking_comfort);
-
-  // Get the lowest cost method
-  const dailyCosts = Object.entries(costData.daily)
-    .filter(([_, value]) => typeof value === "number")
-    .map(([key, value]) => ({
-      key,
-      cost: value as number,
-    }))
-    .sort((a, b) => a.cost - b.cost);
-
-  if (dailyCosts.length === 0) {
-    return {
-      method: "NJ Transit",
-      reason: "Based on your preferences, NJ Transit offers the best balance.",
-    };
-  }
-
-  if (costRank === 1) {
-    const cheapest = dailyCosts[0];
-    const methodNames: Record<string, string> = {
-      njTransit: "NJ Transit",
-      boxcar: "Boxcar",
-      boxcarMember: "Boxcar (Member)",
-      selfDrive: "Self Drive",
-      uber: "Uber",
-      luxuryCar: "Luxury Car",
-    };
-    return {
-      method: methodNames[cheapest.key] || cheapest.key,
-      reason:
-        "You ranked cost as most important, and this option offers the best value.",
-    };
-  } else if (comfortRank === 1) {
-    return {
-      method: "Luxury Car",
-      reason:
-        "You prioritized comfort, and a luxury car provides the most comfortable experience.",
-    };
-  } else {
-    return {
-      method: "NJ Transit",
-      reason:
-        "Based on your preferences, NJ Transit offers the best balance of cost and reliability.",
-    };
-  }
+  const rec = computeRecommendation(data);
+  const reason = `Top choice based on your priorities (cost=${data.ranking_cost}, comfort=${data.ranking_comfort}, on-time=${data.ranking_on_time}, stress=${data.ranking_stress}).`;
+  return { method: rec.recommended, reason };
 };
 
 export const convertCostResultsToCommuteResults = (

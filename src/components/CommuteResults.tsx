@@ -42,6 +42,8 @@ interface CommuteResultsProps {
 }
 
 export const CommuteResults = ({ results }: CommuteResultsProps) => {
+  console.log("results");
+  console.log(results);
   const dailyData = [
     { name: 'Driving', cost: results.daily.driving, fill: '#ef4444' },
     { name: 'Uber', cost: results.daily.uber, fill: '#f97316' },

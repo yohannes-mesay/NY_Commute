@@ -8,6 +8,7 @@ import {
   saveCommuteFormInput,
   getDrivingCostBreakdown,
 } from "@/lib/api";
+import { checkAndRecord } from "@/utils/rateLimit";
 
 // Zod validation schema for commute form inputs
 const commuteFormSchema = z.object({
@@ -76,6 +77,19 @@ export const useCommuteForm = () => {
   const { toast } = useToast();
 
   const handleSubmit = async () => {
+    // Client-side rate limit: 20 submissions per minute per client
+    const limit = checkAndRecord("commute_submit", 20, 60_000);
+    if (!limit.ok) {
+      toast({
+        title: "Too many submissions",
+        description: `Please wait ${Math.ceil(
+          limit.resetMs / 1000
+        )}s before trying again.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {

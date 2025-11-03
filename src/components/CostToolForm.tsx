@@ -40,16 +40,53 @@ export const CostToolForm = ({
     error: stationsError,
   } = useNJTransitStations();
 
+  // Ranking helpers
+  const selectedRanks = {
+    cost: formData.ranking_cost,
+    comfort: formData.ranking_comfort,
+    onTime: formData.ranking_on_time,
+    stress: formData.ranking_stress,
+  };
+
+  const getDisabledFor = (
+    currentField: keyof typeof selectedRanks,
+    num: number
+  ) => {
+    const value = num.toString();
+    return (
+      (currentField !== "cost" && selectedRanks.cost === value) ||
+      (currentField !== "comfort" && selectedRanks.comfort === value) ||
+      (currentField !== "onTime" && selectedRanks.onTime === value) ||
+      (currentField !== "stress" && selectedRanks.stress === value)
+    );
+  };
+
+  const areAllRanksChosen =
+    selectedRanks.cost !== "" &&
+    selectedRanks.comfort !== "" &&
+    selectedRanks.onTime !== "" &&
+    selectedRanks.stress !== "";
+
+  const hasUniqueRanks = (() => {
+    const used = [
+      selectedRanks.cost,
+      selectedRanks.comfort,
+      selectedRanks.onTime,
+      selectedRanks.stress,
+    ].filter(Boolean);
+    return new Set(used).size === used.length && used.length === 4;
+  })();
+
+  const rankingError = areAllRanksChosen && !hasUniqueRanks;
+
   const isFormValid = () => {
     return (
       formData.commute_origin &&
       formData.commute_method &&
       formData.departure_time &&
       formData.office_address &&
-      formData.ranking_cost &&
-      formData.ranking_comfort &&
-      formData.ranking_on_time &&
-      formData.ranking_stress
+      areAllRanksChosen &&
+      hasUniqueRanks
     );
   };
 
@@ -210,6 +247,7 @@ export const CostToolForm = ({
                     <SelectItem
                       key={num}
                       value={num.toString()}
+                      disabled={getDisabledFor("cost", num)}
                       className="text-white hover:bg-slate-600"
                     >
                       {num}
@@ -237,6 +275,7 @@ export const CostToolForm = ({
                     <SelectItem
                       key={num}
                       value={num.toString()}
+                      disabled={getDisabledFor("comfort", num)}
                       className="text-white hover:bg-slate-600"
                     >
                       {num}
@@ -264,6 +303,7 @@ export const CostToolForm = ({
                     <SelectItem
                       key={num}
                       value={num.toString()}
+                      disabled={getDisabledFor("onTime", num)}
                       className="text-white hover:bg-slate-600"
                     >
                       {num}
@@ -291,6 +331,7 @@ export const CostToolForm = ({
                     <SelectItem
                       key={num}
                       value={num.toString()}
+                      disabled={getDisabledFor("stress", num)}
                       className="text-white hover:bg-slate-600"
                     >
                       {num}
@@ -299,6 +340,31 @@ export const CostToolForm = ({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {rankingError && (
+            <p className="mt-2 text-sm text-red-400">
+              Please use each rank (1–4) exactly once across all categories.
+            </p>
+          )}
+
+          <div className="mt-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="text-sm"
+              onClick={() =>
+                setFormData({
+                  ...formData,
+                  ranking_cost: "",
+                  ranking_comfort: "",
+                  ranking_on_time: "",
+                  ranking_stress: "",
+                })
+              }
+            >
+              Clear ranks
+            </Button>
           </div>
         </div>
 

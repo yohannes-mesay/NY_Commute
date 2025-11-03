@@ -135,7 +135,7 @@ export const getBoxcarData = async (station: string) => {
     const { data, error } = await supabase
       .from("cccboxcarfares")
       .select("*")
-      .eq("boxcar_station", station)
+      .eq("train_station", station)
       .maybeSingle();
 
     if (error) {
@@ -197,8 +197,10 @@ export async function getCommuteCosts(
   const { data: boxcar } = await supabase
     .from("cccboxcarfares")
     .select("*")
-    .eq("boxcar_station", commute_origin)
+    .eq("train_station", commute_origin)
     .maybeSingle();
+
+  console.log("boxcar", boxcar);
 
   // 3️⃣ Fetch driving reference constants
   const { data: driveRef, error: driveError } = await supabase
@@ -226,12 +228,17 @@ export async function getCommuteCosts(
 
   const uberFuel = (distanceRoundTrip / mpg) * gas_price_per_gall;
   const uberDistCharge = distanceRoundTrip * 2;
-  const uberTripCost = (uberFuel + uberDistCharge + 5) * 2;
+  const UBER_BASE_FARE = 5;
+  const uberTripCost = (uberFuel + uberDistCharge + UBER_BASE_FARE) * 2;
   const uberDaily = uberTripCost + tolls + congestion_fee;
   const luxFuel = (distanceRoundTrip / mpg) * gas_price_per_gall;
-  const luxDistCharge = distanceRoundTrip * 4.1;
-  const luxTimeCharge = (distanceRoundTrip / 30) * 0.7;
-  const luxTripCost = (luxFuel + luxDistCharge + luxTimeCharge + 15) * 2;
+  const LUX_DIST_CHARGE = 4.1;
+  const luxDistCharge = distanceRoundTrip * LUX_DIST_CHARGE;
+  const LUX_TIME_CHARGE = 0.7;
+  const luxTimeCharge = (distanceRoundTrip / 30) * LUX_TIME_CHARGE;
+  const LUX_BASE_FARE = 15;
+  const luxTripCost =
+    (luxFuel + luxDistCharge + luxTimeCharge + LUX_BASE_FARE) * 2;
   const luxuryDaily = luxTripCost + tolls + congestion_fee;
 
   // 6️⃣ Weekly and monthly
