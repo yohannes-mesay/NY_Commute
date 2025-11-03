@@ -93,6 +93,7 @@ export const TrafficChart = ({ timeFilter }: TrafficChartProps) => {
   const [processedData, setProcessedData] = useState<RouteData[]>([]);
 
   const { data: commutingData, isLoading, error } = useCommuteData(timeFilter);
+  console.log(commutingData);
 
   useEffect(() => {
     if (error) {

@@ -65,7 +65,7 @@ export type Database = {
           ranking_comfort: number | null
           ranking_cost: number | null
           ranking_on_time: number | null
-          ranking_relaxation: number | null
+          ranking_stress: number | null
         }
         Insert: {
           commute_days_per_week?: number | null
@@ -78,7 +78,7 @@ export type Database = {
           ranking_comfort?: number | null
           ranking_cost?: number | null
           ranking_on_time?: number | null
-          ranking_relaxation?: number | null
+          ranking_stress?: number | null
         }
         Update: {
           commute_days_per_week?: number | null
@@ -91,7 +91,7 @@ export type Database = {
           ranking_comfort?: number | null
           ranking_cost?: number | null
           ranking_on_time?: number | null
-          ranking_relaxation?: number | null
+          ranking_stress?: number | null
         }
         Relationships: []
       }
@@ -128,7 +128,7 @@ export type Database = {
         }
         Relationships: []
       }
-      cccnjtrafares: {
+      cccnjtransitfares: {
         Row: {
           daily_one_way: number | null
           daily_round_trip: number | null

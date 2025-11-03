@@ -11,6 +11,7 @@ import { TrafficChart } from "@/components/TrafficChart";
 import { WeekdayTrafficChart } from "@/components/WeekdayTrafficChart";
 import { NewsSection } from "@/components/NewsSection";
 import TimeHeatMap from "@/components/TimeHeatMap";
+import { HistoricalTrendChart } from "@/components/HistoricalTrendChart";
 
 const Dashboard = () => {
   const [timeFilter, setTimeFilter] = useState<"morning" | "afternoon">(
@@ -19,6 +20,17 @@ const Dashboard = () => {
   const [weekdayTimeFilter, setWeekdayTimeFilter] = useState<
     "morning" | "afternoon"
   >("morning");
+  const [historicalTimeFilter, setHistoricalTimeFilter] = useState<
+    "morning" | "afternoon"
+  >("morning");
+  const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+  const [availableRoutes, setAvailableRoutes] = useState<
+    Array<{
+      name: string;
+      startingPoint: string | null;
+      finishPoint: string | null;
+    }>
+  >([]);
 
   return (
     <div className="min-h-screen pt-16">
@@ -168,6 +180,100 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <WeekdayTrafficChart timeFilter={weekdayTimeFilter} />
+            </CardContent>
+          </Card>
+
+          {/* Historical Trend Chart */}
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <CardTitle className="text-2xl text-white">
+                    Commute Duration Over Time by Route
+                  </CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Historical daily average commute duration before and after
+                    congestion pricing (January 5, 2025) with linear trend
+                    lines. Data is shown only for weekdays and US federal bank
+                    holidays are excluded.
+                  </CardDescription>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setHistoricalTimeFilter("morning")}
+                      variant={
+                        historicalTimeFilter === "morning"
+                          ? "outline"
+                          : "default"
+                      }
+                      className={`${
+                        historicalTimeFilter === "morning"
+                          ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
+                          : "bg-slate-700 hover:bg-slate-600"
+                      }`}
+                    >
+                      Morning
+                    </Button>
+                    <Button
+                      onClick={() => setHistoricalTimeFilter("afternoon")}
+                      variant={
+                        historicalTimeFilter === "afternoon"
+                          ? "outline"
+                          : "default"
+                      }
+                      className={`${
+                        historicalTimeFilter === "afternoon"
+                          ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
+                          : "bg-slate-700 hover:bg-slate-600"
+                      }`}
+                    >
+                      Afternoon
+                    </Button>
+                  </div>
+                  {availableRoutes.length > 0 && (
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setSelectedRoute(null)}
+                        variant={selectedRoute === null ? "outline" : "default"}
+                        className={`${
+                          selectedRoute === null
+                            ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
+                            : "bg-slate-700 hover:bg-slate-600"
+                        }`}
+                      >
+                        All Routes
+                      </Button>
+                      {availableRoutes.map((route) => (
+                        <Button
+                          key={route.name}
+                          onClick={() => setSelectedRoute(route.name)}
+                          variant={
+                            selectedRoute === route.name ? "outline" : "default"
+                          }
+                          className={`${
+                            selectedRoute === route.name
+                              ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
+                              : "bg-slate-700 hover:bg-slate-600"
+                          }`}
+                        >
+                          {route.startingPoint && route.finishPoint
+                            ? `${route.startingPoint} → ${route.finishPoint}`
+                            : route.name}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <HistoricalTrendChart
+                timeFilter={historicalTimeFilter}
+                selectedRoute={selectedRoute}
+                routes={availableRoutes}
+                onRoutesChange={setAvailableRoutes}
+              />
             </CardContent>
           </Card>
         </section>

@@ -8,7 +8,7 @@ export interface CommuteFormData {
   ranking_cost: string;
   ranking_comfort: string;
   ranking_on_time: string;
-  ranking_relaxation: string;
+  ranking_stress: string; 
 }
 
 export interface CommuteResults {

@@ -71,7 +71,7 @@ const getCellStyle = (value: number | null) => {
   if (value === null) {
     return {
       backgroundColor: "rgba(148, 163, 184, 0.12)",
-      color: "#94a3b8",
+      color: "#ffffff",
     };
   }
 
@@ -82,13 +82,13 @@ const getCellStyle = (value: number | null) => {
   if (clamped < 0) {
     return {
       backgroundColor: `rgba(45, 212, 191, ${alpha})`,
-      color: "#0f766e",
+      color: "#ffffff",
     };
   }
 
   return {
     backgroundColor: `rgba(248, 113, 113, ${alpha})`,
-    color: "#991b1b",
+    color: "#ffffff",
   };
 };
 
@@ -259,6 +259,8 @@ export default function TimeHeatMap() {
     queryFn: () => getCommuteData({ isMorning: false }),
     staleTime: 1000 * 60 * 5,
   });
+  console.log(morningData);
+  console.log(afternoonData);
 
   const isLoading = isMorningLoading || isAfternoonLoading;
   const hasError = isMorningError || isAfternoonError;

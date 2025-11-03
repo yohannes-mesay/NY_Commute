@@ -1,12 +1,25 @@
-
 import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { MapPin } from "lucide-react";
-import { NJ_STATIONS, COMMUTE_METHODS, DEPARTURE_TIMES } from "@/constants/commute";
+import { COMMUTE_METHODS, DEPARTURE_TIMES } from "@/constants/commute";
+import { useNJTransitStations } from "@/hooks/useNJTransitStations";
 import { CommuteFormData } from "@/types/commute";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CostToolFormProps {
   formData: CommuteFormData;
@@ -15,16 +28,29 @@ interface CostToolFormProps {
   isLoading: boolean;
 }
 
-export const CostToolForm = ({ formData, setFormData, onSubmit, isLoading }: CostToolFormProps) => {
+export const CostToolForm = ({
+  formData,
+  setFormData,
+  onSubmit,
+  isLoading,
+}: CostToolFormProps) => {
+  const {
+    stations,
+    isLoading: stationsLoading,
+    error: stationsError,
+  } = useNJTransitStations();
+
   const isFormValid = () => {
-    return formData.commute_origin && 
-           formData.commute_method && 
-           formData.departure_time && 
-           formData.office_address &&
-           formData.ranking_cost &&
-           formData.ranking_comfort &&
-           formData.ranking_on_time &&
-           formData.ranking_relaxation;
+    return (
+      formData.commute_origin &&
+      formData.commute_method &&
+      formData.departure_time &&
+      formData.office_address &&
+      formData.ranking_cost &&
+      formData.ranking_comfort &&
+      formData.ranking_on_time &&
+      formData.ranking_stress
+    );
   };
 
   return (
@@ -43,33 +69,57 @@ export const CostToolForm = ({ formData, setFormData, onSubmit, isLoading }: Cos
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Where do you commute from (what train station is closest to you)?
           </label>
-          <Select value={formData.commute_origin} onValueChange={(value) => 
-            setFormData({...formData, commute_origin: value})}>
-            <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-              <SelectValue placeholder="Select your closest station" />
-            </SelectTrigger>
-            <SelectContent className="bg-slate-700 border-slate-600 max-h-60">
-              {NJ_STATIONS.map((station) => (
-                <SelectItem key={station} value={station} className="text-white hover:bg-slate-600">
-                  {station}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {stationsLoading ? (
+            <Skeleton className="h-10 w-full bg-slate-700/60" />
+          ) : stationsError ? (
+            <div className="text-sm text-red-400">
+              Failed to load stations. Please try refreshing the page.
+            </div>
+          ) : (
+            <Select
+              value={formData.commute_origin}
+              onValueChange={(value) =>
+                setFormData({ ...formData, commute_origin: value })
+              }
+            >
+              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                <SelectValue placeholder="Select your closest station" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-700 border-slate-600 max-h-60">
+                {stations.map((station) => (
+                  <SelectItem
+                    key={station}
+                    value={station}
+                    className="text-white hover:bg-slate-600"
+                  >
+                    {station}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
             How do you usually commute?
           </label>
-          <Select value={formData.commute_method} onValueChange={(value) => 
-            setFormData({...formData, commute_method: value})}>
+          <Select
+            value={formData.commute_method}
+            onValueChange={(value) =>
+              setFormData({ ...formData, commute_method: value })
+            }
+          >
             <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
               <SelectValue placeholder="Select your commute method" />
             </SelectTrigger>
             <SelectContent className="bg-slate-700 border-slate-600">
               {COMMUTE_METHODS.map((method) => (
-                <SelectItem key={method} value={method} className="text-white hover:bg-slate-600">
+                <SelectItem
+                  key={method}
+                  value={method}
+                  className="text-white hover:bg-slate-600"
+                >
                   {method}
                 </SelectItem>
               ))}
@@ -81,14 +131,22 @@ export const CostToolForm = ({ formData, setFormData, onSubmit, isLoading }: Cos
           <label className="block text-sm font-medium text-gray-300 mb-2">
             What time do you leave in the morning?
           </label>
-          <Select value={formData.departure_time} onValueChange={(value) => 
-            setFormData({...formData, departure_time: value})}>
+          <Select
+            value={formData.departure_time}
+            onValueChange={(value) =>
+              setFormData({ ...formData, departure_time: value })
+            }
+          >
             <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
               <SelectValue placeholder="Select departure time" />
             </SelectTrigger>
             <SelectContent className="bg-slate-700 border-slate-600">
               {DEPARTURE_TIMES.map((time) => (
-                <SelectItem key={time} value={time} className="text-white hover:bg-slate-600">
+                <SelectItem
+                  key={time}
+                  value={time}
+                  className="text-white hover:bg-slate-600"
+                >
                   {time}
                 </SelectItem>
               ))}
@@ -98,11 +156,14 @@ export const CostToolForm = ({ formData, setFormData, onSubmit, isLoading }: Cos
 
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Days per week you commute (on average): {formData.days_per_week[0]} days
+            Days per week you commute (on average): {formData.days_per_week[0]}{" "}
+            days
           </label>
           <Slider
             value={formData.days_per_week}
-            onValueChange={(value) => setFormData({...formData, days_per_week: value})}
+            onValueChange={(value) =>
+              setFormData({ ...formData, days_per_week: value })
+            }
             max={5}
             min={1}
             step={1}
@@ -116,7 +177,9 @@ export const CostToolForm = ({ formData, setFormData, onSubmit, isLoading }: Cos
           </label>
           <Textarea
             value={formData.office_address}
-            onChange={(e) => setFormData({...formData, office_address: e.target.value})}
+            onChange={(e) =>
+              setFormData({ ...formData, office_address: e.target.value })
+            }
             placeholder="Enter your office address..."
             className="bg-slate-700 border-slate-600 text-white placeholder-gray-400"
             rows={3}
@@ -124,18 +187,31 @@ export const CostToolForm = ({ formData, setFormData, onSubmit, isLoading }: Cos
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold text-white mb-4">Rank these in order of importance to you (1 = most important, 4 = least important):</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">
+            Rank these in order of importance to you (1 = most important, 4 =
+            least important):
+          </h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Cost</label>
-              <Select value={formData.ranking_cost} onValueChange={(value) => 
-                setFormData({...formData, ranking_cost: value})}>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Cost
+              </label>
+              <Select
+                value={formData.ranking_cost}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, ranking_cost: value })
+                }
+              >
                 <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                   <SelectValue placeholder="Rank" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
-                  {[1,2,3,4].map((num) => (
-                    <SelectItem key={num} value={num.toString()} className="text-white hover:bg-slate-600">
+                  {[1, 2, 3, 4].map((num) => (
+                    <SelectItem
+                      key={num}
+                      value={num.toString()}
+                      className="text-white hover:bg-slate-600"
+                    >
                       {num}
                     </SelectItem>
                   ))}
@@ -144,15 +220,25 @@ export const CostToolForm = ({ formData, setFormData, onSubmit, isLoading }: Cos
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Comfortability</label>
-              <Select value={formData.ranking_comfort} onValueChange={(value) => 
-                setFormData({...formData, ranking_comfort: value})}>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Comfortability
+              </label>
+              <Select
+                value={formData.ranking_comfort}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, ranking_comfort: value })
+                }
+              >
                 <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                   <SelectValue placeholder="Rank" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
-                  {[1,2,3,4].map((num) => (
-                    <SelectItem key={num} value={num.toString()} className="text-white hover:bg-slate-600">
+                  {[1, 2, 3, 4].map((num) => (
+                    <SelectItem
+                      key={num}
+                      value={num.toString()}
+                      className="text-white hover:bg-slate-600"
+                    >
                       {num}
                     </SelectItem>
                   ))}
@@ -161,15 +247,25 @@ export const CostToolForm = ({ formData, setFormData, onSubmit, isLoading }: Cos
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">On-time arrival</label>
-              <Select value={formData.ranking_on_time} onValueChange={(value) => 
-                setFormData({...formData, ranking_on_time: value})}>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                On-time arrival
+              </label>
+              <Select
+                value={formData.ranking_on_time}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, ranking_on_time: value })
+                }
+              >
                 <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                   <SelectValue placeholder="Rank" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
-                  {[1,2,3,4].map((num) => (
-                    <SelectItem key={num} value={num.toString()} className="text-white hover:bg-slate-600">
+                  {[1, 2, 3, 4].map((num) => (
+                    <SelectItem
+                      key={num}
+                      value={num.toString()}
+                      className="text-white hover:bg-slate-600"
+                    >
                       {num}
                     </SelectItem>
                   ))}
@@ -178,15 +274,25 @@ export const CostToolForm = ({ formData, setFormData, onSubmit, isLoading }: Cos
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Relaxed commute</label>
-              <Select value={formData.ranking_relaxation} onValueChange={(value) => 
-                setFormData({...formData, ranking_relaxation: value})}>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Relaxed commute
+              </label>
+              <Select
+                value={formData.ranking_stress}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, ranking_stress: value })
+                }
+              >
                 <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                   <SelectValue placeholder="Rank" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
-                  {[1,2,3,4].map((num) => (
-                    <SelectItem key={num} value={num.toString()} className="text-white hover:bg-slate-600">
+                  {[1, 2, 3, 4].map((num) => (
+                    <SelectItem
+                      key={num}
+                      value={num.toString()}
+                      className="text-white hover:bg-slate-600"
+                    >
                       {num}
                     </SelectItem>
                   ))}
@@ -196,8 +302,8 @@ export const CostToolForm = ({ formData, setFormData, onSubmit, isLoading }: Cos
           </div>
         </div>
 
-        <Button 
-          onClick={onSubmit} 
+        <Button
+          onClick={onSubmit}
           disabled={!isFormValid() || isLoading}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3"
         >

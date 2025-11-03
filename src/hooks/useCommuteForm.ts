@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { CommuteFormData, CommuteResults } from "@/types/commute";
-import { calculateMockResults } from "@/utils/commuteCalculations";
+import { convertCostResultsToCommuteResults } from "@/utils/commuteCalculations";
+import {
+  getCommuteCosts,
+  saveCommuteFormInput,
+  getDrivingCostBreakdown,
+} from "@/lib/api";
 
 // Zod validation schema for commute form inputs
 const commuteFormSchema = z.object({
@@ -48,7 +51,7 @@ const commuteFormSchema = z.object({
     .int()
     .min(1, "Ranking must be between 1 and 4")
     .max(4, "Ranking must be between 1 and 4"),
-  ranking_relaxation: z
+  ranking_stress: z
     .number()
     .int()
     .min(1, "Ranking must be between 1 and 4")
@@ -65,7 +68,7 @@ export const useCommuteForm = () => {
     ranking_cost: "",
     ranking_comfort: "",
     ranking_on_time: "",
-    ranking_relaxation: "",
+    ranking_stress: "",
   });
 
   const [results, setResults] = useState<CommuteResults | null>(null);
@@ -81,7 +84,7 @@ export const useCommuteForm = () => {
         formData.ranking_cost,
         formData.ranking_comfort,
         formData.ranking_on_time,
-        formData.ranking_relaxation,
+        formData.ranking_stress,
       ].filter((r) => r !== "");
 
       const uniqueRankings = new Set(rankings);
@@ -105,7 +108,7 @@ export const useCommuteForm = () => {
         ranking_cost: parseInt(formData.ranking_cost),
         ranking_comfort: parseInt(formData.ranking_comfort),
         ranking_on_time: parseInt(formData.ranking_on_time),
-        ranking_relaxation: parseInt(formData.ranking_relaxation),
+        ranking_stress: parseInt(formData.ranking_stress),
       };
 
       // Validate input with zod schema
@@ -127,32 +130,51 @@ export const useCommuteForm = () => {
         throw validationError;
       }
 
-      // Insert validated data into database
-      type CommuteInsert =
-        Database["public"]["Tables"]["ccccommuteforminputs"]["Insert"];
-      const dbPayload: CommuteInsert = {
-        ...insertPayload,
-        created_at: new Date().toISOString(),
-      };
-
-      const { data, error } = await supabase
-        .from("ccccommuteforminputs")
-        .insert([dbPayload])
-        .select();
-
-      if (error) {
+      // Save form data to database
+      try {
+        await saveCommuteFormInput(insertPayload);
+      } catch (error) {
         toast({
           title: "Database Error",
-          description: `Failed to save: ${error.message}`,
+          description:
+            error instanceof Error
+              ? error.message
+              : "Failed to save form data.",
           variant: "destructive",
         });
         setIsLoading(false);
         return;
       }
 
-      // Calculate costs (mock data for now)
-      const mockResults = calculateMockResults(formData);
-      setResults(mockResults);
+      // Fetch real cost data and breakdown from Supabase
+      let costResults;
+      let breakdown;
+      try {
+        [costResults, breakdown] = await Promise.all([
+          getCommuteCosts(formData.commute_origin, formData.days_per_week[0]),
+          getDrivingCostBreakdown(formData.commute_origin),
+        ]);
+      } catch (costError) {
+        toast({
+          title: "Error",
+          description:
+            costError instanceof Error
+              ? costError.message
+              : "Failed to calculate commute costs. Please check your origin station.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Convert CostResults to CommuteResults format
+      const commuteResults = convertCostResultsToCommuteResults(
+        costResults,
+        formData,
+        breakdown
+      );
+
+      setResults(commuteResults);
 
       toast({
         title: "Success!",
