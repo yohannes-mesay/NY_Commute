@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calculator, TrendingUp } from "lucide-react";
-import { CommuteResults } from "@/components/CommuteResults";
+import { CommuteResults, Results } from "@/components/CommuteResults";
 import { CommuteResults as CommuteResultsType } from "@/types/commute";
 
 interface CostToolResultsProps {
@@ -10,7 +10,7 @@ interface CostToolResultsProps {
 
 export const CostToolResults = ({ results }: CostToolResultsProps) => {
   if (results) {
-    return <CommuteResults results={results} />;
+    return <CommuteResults results={results as Results} />;
   }
 
   return (

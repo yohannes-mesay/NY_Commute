@@ -17,7 +17,6 @@ export const computeRecommendation = (
     Uber: { cost: 1, comfort: 4, onTime: 3, stress: 3 },
     "Self Drive": { cost: 3, comfort: 2, onTime: 4, stress: 1 },
   } as const;
- 
 
   const userRanks = {
     cost: parseInt(formData.ranking_cost),
@@ -25,7 +24,7 @@ export const computeRecommendation = (
     onTime: parseInt(formData.ranking_on_time),
     stress: parseInt(formData.ranking_stress),
   };
-  
+
   const userPriorities = {
     cost: MAX_RANK + 1 - userRanks.cost,
     comfort: MAX_RANK + 1 - userRanks.comfort,
@@ -61,10 +60,23 @@ export const computeRecommendation = (
 export const determineRecommendation = (
   data: CommuteFormData,
   _costData: CostResults
-): { method: string; reason: string } => {
+): {
+  method: string;
+  reason: string;
+  data: { cost: number; comfort: number; onTime: number; stress: number };
+} => {
   const rec = computeRecommendation(data);
-  const reason = `Top choice based on your priorities (cost=${data.ranking_cost}, comfort=${data.ranking_comfort}, on-time=${data.ranking_on_time}, stress=${data.ranking_stress}).`;
-  return { method: rec.recommended, reason };
+  const reason = `Top choice based on your priorities:`;
+  return {
+    method: rec.recommended,
+    reason,
+    data: {
+      cost: parseInt(data.ranking_cost),
+      comfort: parseInt(data.ranking_comfort),
+      onTime: parseInt(data.ranking_on_time),
+      stress: parseInt(data.ranking_stress),
+    },
+  };
 };
 
 export const convertCostResultsToCommuteResults = (
