@@ -4,14 +4,24 @@ import { Info, Database, Target, Users, Calendar, TrendingUp } from "lucide-reac
 
 const About = () => {
   return (
-    <div className="min-h-screen pt-16 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="relative min-h-screen pt-24 pb-16">
+      <div
+        className="pointer-events-none fixed inset-0 opacity-5"
+        style={{
+          backgroundImage: `
+            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px),
+            linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: "50px 50px",
+        }}
+      />
+      <div className="relative z-10 w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-white mb-4 flex items-center justify-center gap-3">
-            <Info className="h-10 w-10 text-blue-400" />
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 flex items-center justify-center gap-3">
+            <Info className="h-8 w-8 sm:h-10 sm:w-10 text-blue-400" />
             About This Project
           </h1>
-          <p className="text-lg text-gray-300 max-w-3xl mx-auto">
+          <p className="text-base sm:text-lg text-gray-300 max-w-3xl mx-auto">
             Understanding the real-world impact of NYC's congestion pricing through comprehensive traffic data analysis.
           </p>
         </div>
@@ -20,7 +30,7 @@ const About = () => {
           {/* What is Congestion Pricing */}
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-xl sm:text-2xl text-white flex items-center gap-2">
                 <Target className="h-6 w-6 text-blue-400" />
                 What is Congestion Pricing?
               </CardTitle>
@@ -47,7 +57,7 @@ const About = () => {
           {/* How it Works in NYC */}
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-xl sm:text-2xl text-white flex items-center gap-2">
                 <TrendingUp className="h-6 w-6 text-green-400" />
                 How It Works in NYC
               </CardTitle>
@@ -82,7 +92,7 @@ const About = () => {
           {/* Purpose of This Site */}
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-xl sm:text-2xl text-white flex items-center gap-2">
                 <Database className="h-6 w-6 text-purple-400" />
                 Purpose of This Site
               </CardTitle>
@@ -111,7 +121,7 @@ const About = () => {
           {/* Who Built It */}
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-xl sm:text-2xl text-white flex items-center gap-2">
                 <Users className="h-6 w-6 text-yellow-400" />
                 Who Built This & How Data is Collected
               </CardTitle>
@@ -140,7 +150,7 @@ const About = () => {
           {/* Timeline & Data Transparency */}
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-xl sm:text-2xl text-white flex items-center gap-2">
                 <Calendar className="h-6 w-6 text-red-400" />
                 Timeline & Data Transparency
               </CardTitle>

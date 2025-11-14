@@ -94,13 +94,23 @@ const Blog = () => {
   };
 
   return (
-    <div className="min-h-screen pt-16 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="relative min-h-screen pt-24 pb-16">
+      <div
+        className="pointer-events-none fixed inset-0 opacity-5"
+        style={{
+          backgroundImage: `
+            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px),
+            linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: "50px 50px",
+        }}
+      />
+      <div className="relative z-10 w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-white mb-4">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
             Traffic Analysis Blog
           </h1>
-          <p className="text-lg text-gray-300 max-w-3xl mx-auto">
+          <p className="text-base sm:text-lg text-gray-300 max-w-3xl mx-auto">
             In-depth analysis, research findings, and insights about NYC congestion pricing and its impact on commuter traffic patterns.
           </p>
         </div>
@@ -124,7 +134,7 @@ const Blog = () => {
               variant={selectedTag === null ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedTag(null)}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 text-sm sm:text-base"
             >
               All Posts
             </Button>
@@ -136,7 +146,7 @@ const Blog = () => {
                   variant={selectedTag === tag ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                  className="bg-slate-700 hover:bg-slate-600 border-slate-600"
+                  className="bg-slate-700 hover:bg-slate-600 border-slate-600 text-sm sm:text-base"
                 >
                   <Icon className="h-3 w-3 mr-1" />
                   {tag}
@@ -156,10 +166,10 @@ const Blog = () => {
                   {featuredPost.readTime}
                 </Badge>
               </div>
-              <CardTitle className="text-2xl text-white hover:text-blue-400 transition-colors cursor-pointer">
+              <CardTitle className="text-xl sm:text-2xl text-white hover:text-blue-400 transition-colors cursor-pointer">
                 {featuredPost.title}
               </CardTitle>
-              <CardDescription className="text-gray-300 text-base">
+              <CardDescription className="text-gray-300 text-base sm:text-lg">
                 {featuredPost.summary}
               </CardDescription>
             </CardHeader>
@@ -175,7 +185,7 @@ const Blog = () => {
                     {featuredPost.author}
                   </div>
                 </div>
-                <Button variant="ghost" className="text-blue-400 hover:text-blue-300">
+                <Button variant="ghost" className="text-blue-400 hover:text-blue-300 text-sm sm:text-base">
                   Read More <ArrowRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>
@@ -200,7 +210,7 @@ const Blog = () => {
                     {post.readTime}
                   </Badge>
                 </div>
-                <CardTitle className="text-lg text-white group-hover:text-blue-400 transition-colors">
+                <CardTitle className="text-lg sm:text-xl text-white group-hover:text-blue-400 transition-colors">
                   {post.title}
                 </CardTitle>
                 <CardDescription className="text-gray-300">

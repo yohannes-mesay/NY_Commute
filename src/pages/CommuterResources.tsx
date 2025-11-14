@@ -47,13 +47,23 @@ const CommuterResources = () => {
   ];
 
   return (
-    <div className="min-h-screen pt-16 bg-gradient-to-br from-slate-900/80 via-slate-800/80 to-slate-900/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="relative min-h-screen pt-24 pb-16">
+      <div
+        className="pointer-events-none fixed inset-0 opacity-5"
+        style={{
+          backgroundImage: `
+            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px),
+            linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: "50px 50px",
+        }}
+      />
+      <div className="relative z-10 w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6">
             Commuter Resources
           </h1>
-          <p className="text-lg text-gray-300 max-w-3xl mx-auto">
+          <p className="text-base sm:text-lg text-gray-300 max-w-3xl mx-auto">
             Essential tools and information to help you navigate NYC commuting efficiently
           </p>
         </div>
@@ -62,7 +72,7 @@ const CommuterResources = () => {
           {/* Real-Time Traffic & Transit Links */}
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-2xl text-white flex items-center gap-2">
+              <CardTitle className="text-xl sm:text-2xl text-white flex items-center gap-2">
                 <AlertTriangle className="h-6 w-6 text-blue-400" />
                 Real-Time Traffic & Transit Status
               </CardTitle>
@@ -94,7 +104,7 @@ const CommuterResources = () => {
           {/* Time-of-Day Travel Tips */}
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-2xl text-white flex items-center gap-2">
+              <CardTitle className="text-xl sm:text-2xl text-white flex items-center gap-2">
                 <Clock className="h-6 w-6 text-blue-400" />
                 Data-Driven Travel Tips
               </CardTitle>
@@ -117,7 +127,7 @@ const CommuterResources = () => {
           {/* Planning Tools */}
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-2xl text-white flex items-center gap-2">
+              <CardTitle className="text-xl sm:text-2xl text-white flex items-center gap-2">
                 <MapPin className="h-6 w-6 text-blue-400" />
                 Trip Planning Tools
               </CardTitle>
@@ -149,7 +159,7 @@ const CommuterResources = () => {
           {/* Stay Informed */}
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-2xl text-white flex items-center gap-2">
+              <CardTitle className="text-xl sm:text-2xl text-white flex items-center gap-2">
                 <Info className="h-6 w-6 text-blue-400" />
                 Stay Informed
               </CardTitle>

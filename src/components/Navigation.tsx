@@ -30,8 +30,8 @@ export const Navigation = () => {
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       isScrolled ? 'bg-slate-900/95 backdrop-blur-sm shadow-lg' : 'bg-transparent'
     }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-16">
+        <div className="flex justify-between items-center h-16 lg:h-20">
           <Link to="/" className="text-xl font-bold text-white hover:text-blue-400 transition-colors">
             NewYork<span className="text-blue-400">Commute</span>.com
           </Link>
