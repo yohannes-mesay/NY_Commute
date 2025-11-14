@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -23,6 +30,18 @@ const Dashboard = () => {
   const [historicalTimeFilter, setHistoricalTimeFilter] = useState<
     "morning" | "afternoon"
   >("morning");
+  const weekdayOptions = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ] as const;
+  type WeekdayOption = (typeof weekdayOptions)[number];
+  const [selectedWeekday, setSelectedWeekday] =
+    useState<WeekdayOption>("Monday");
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [availableRoutes, setAvailableRoutes] = useState<
     Array<{
@@ -33,10 +52,10 @@ const Dashboard = () => {
   >([]);
 
   return (
-    <div className="min-h-screen pt-16">
+    <div className="relative min-h-screen pt-24 pb-16">
       {/* NYC Street Grid Background Pattern */}
       <div
-        className="fixed inset-0 opacity-5 pointer-events-none"
+        className="pointer-events-none fixed inset-0 opacity-5"
         style={{
           backgroundImage: `
             linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px),
@@ -46,15 +65,15 @@ const Dashboard = () => {
         }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="relative z-10 w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 py-12">
         {/* Intro Section */}
         <section className="mb-12">
           <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6">
               NYC Congestion Pricing Traffic Analysis
             </h1>
             <div className="max-w-4xl mx-auto">
-              <p className="text-lg text-gray-300 mb-6 leading-relaxed">
+              <p className="text-base sm:text-lg text-gray-300 mb-6 leading-relaxed">
                 New York City made headlines as the first city to implement
                 congestion pricing in the United States. We aim to provide
                 insights into how congestion pricing is shaping New York
@@ -85,7 +104,7 @@ const Dashboard = () => {
             <CardHeader>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <CardTitle className="text-2xl text-white">
+                  <CardTitle className="text-xl sm:text-2xl text-white">
                     Average Commute Duration by Time of Day
                   </CardTitle>
                   <CardDescription className="text-gray-400">
@@ -98,7 +117,7 @@ const Dashboard = () => {
                   <Button
                     onClick={() => setTimeFilter("morning")}
                     variant={timeFilter === "morning" ? "outline" : "default"}
-                    className={`${
+                    className={`text-sm sm:text-base ${
                       timeFilter === "morning"
                         ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
                         : "bg-slate-700 hover:bg-slate-600 "
@@ -109,7 +128,7 @@ const Dashboard = () => {
                   <Button
                     onClick={() => setTimeFilter("afternoon")}
                     variant={timeFilter === "afternoon" ? "outline" : "default"}
-                    className={`${
+                    className={`text-sm sm:text-base ${
                       timeFilter === "afternoon"
                         ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
                         : "bg-slate-700 hover:bg-slate-600"
@@ -126,11 +145,6 @@ const Dashboard = () => {
           </Card>
         </section>
 
-        {/* News Section */}
-        <section className="mb-12">
-          <NewsSection />
-        </section>
-
         {/* Additional Chart Placeholders */}
         <section className="space-y-8">
           <TimeHeatMap />
@@ -139,7 +153,7 @@ const Dashboard = () => {
             <CardHeader>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <CardTitle className="text-2xl text-white">
+                  <CardTitle className="text-xl sm:text-2xl text-white">
                     Commute Duration by Weekday
                   </CardTitle>
                   <CardDescription className="text-gray-400">
@@ -148,38 +162,66 @@ const Dashboard = () => {
                     windows.
                   </CardDescription>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => setWeekdayTimeFilter("morning")}
-                    variant={
-                      weekdayTimeFilter === "morning" ? "outline" : "default"
+                <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setWeekdayTimeFilter("morning")}
+                      variant={
+                        weekdayTimeFilter === "morning" ? "outline" : "default"
+                      }
+                      className={`text-sm sm:text-base ${
+                        weekdayTimeFilter === "morning"
+                          ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
+                          : "bg-slate-700 hover:bg-slate-600"
+                      }`}
+                    >
+                      Morning
+                    </Button>
+                    <Button
+                      onClick={() => setWeekdayTimeFilter("afternoon")}
+                      variant={
+                        weekdayTimeFilter === "afternoon"
+                          ? "outline"
+                          : "default"
+                      }
+                      className={`text-sm sm:text-base ${
+                        weekdayTimeFilter === "afternoon"
+                          ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
+                          : "bg-slate-700 hover:bg-slate-600"
+                      }`}
+                    >
+                      Afternoon
+                    </Button>
+                  </div>
+                  <Select
+                    value={selectedWeekday}
+                    onValueChange={(value) =>
+                      setSelectedWeekday(value as WeekdayOption)
                     }
-                    className={`${
-                      weekdayTimeFilter === "morning"
-                        ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
-                        : "bg-slate-700 hover:bg-slate-600"
-                    }`}
                   >
-                    Morning
-                  </Button>
-                  <Button
-                    onClick={() => setWeekdayTimeFilter("afternoon")}
-                    variant={
-                      weekdayTimeFilter === "afternoon" ? "outline" : "default"
-                    }
-                    className={`${
-                      weekdayTimeFilter === "afternoon"
-                        ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
-                        : "bg-slate-700 hover:bg-slate-600"
-                    }`}
-                  >
-                    Afternoon
-                  </Button>
+                    <SelectTrigger className="w-full sm:w-44 bg-slate-700 border-slate-600 text-white">
+                      <SelectValue placeholder="Select day" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-700 border-slate-600 text-white">
+                      {weekdayOptions.map((day) => (
+                        <SelectItem
+                          key={day}
+                          value={day}
+                          className="text-white hover:bg-slate-600"
+                        >
+                          {day}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <WeekdayTrafficChart timeFilter={weekdayTimeFilter} />
+              <WeekdayTrafficChart
+                timeFilter={weekdayTimeFilter}
+                dayFilter={selectedWeekday}
+              />
             </CardContent>
           </Card>
 
@@ -188,7 +230,7 @@ const Dashboard = () => {
             <CardHeader>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <CardTitle className="text-2xl text-white">
+                  <CardTitle className="text-xl sm:text-2xl text-white">
                     Commute Duration Over Time by Route
                   </CardTitle>
                   <CardDescription className="text-gray-400">
@@ -207,7 +249,7 @@ const Dashboard = () => {
                           ? "outline"
                           : "default"
                       }
-                      className={`${
+                      className={`text-sm sm:text-base ${
                         historicalTimeFilter === "morning"
                           ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
                           : "bg-slate-700 hover:bg-slate-600"
@@ -222,7 +264,7 @@ const Dashboard = () => {
                           ? "outline"
                           : "default"
                       }
-                      className={`${
+                      className={`text-sm sm:text-base ${
                         historicalTimeFilter === "afternoon"
                           ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
                           : "bg-slate-700 hover:bg-slate-600"
@@ -236,7 +278,7 @@ const Dashboard = () => {
                       <Button
                         onClick={() => setSelectedRoute(null)}
                         variant={selectedRoute === null ? "outline" : "default"}
-                        className={`${
+                        className={`text-sm sm:text-base ${
                           selectedRoute === null
                             ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
                             : "bg-slate-700 hover:bg-slate-600"
@@ -251,7 +293,7 @@ const Dashboard = () => {
                           variant={
                             selectedRoute === route.name ? "outline" : "default"
                           }
-                          className={`${
+                          className={`text-sm sm:text-base ${
                             selectedRoute === route.name
                               ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
                               : "bg-slate-700 hover:bg-slate-600"

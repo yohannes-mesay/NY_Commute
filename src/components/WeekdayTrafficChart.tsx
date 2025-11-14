@@ -11,8 +11,18 @@ import type { CommuteDataRow } from "@/lib/api";
 
 type TimeFilter = "morning" | "afternoon";
 
+type DayFilter =
+  | "Monday"
+  | "Tuesday"
+  | "Wednesday"
+  | "Thursday"
+  | "Friday"
+  | "Saturday"
+  | "Sunday";
+
 interface WeekdayTrafficChartProps {
   timeFilter: TimeFilter;
+  dayFilter: DayFilter;
 }
 
 interface ChartDataPoint {
@@ -96,10 +106,19 @@ const formatTimeLabel = (value: string): string => {
   return value;
 };
 
-const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const weekdays: DayFilter[] = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
 export const WeekdayTrafficChart = ({
   timeFilter,
+  dayFilter,
 }: WeekdayTrafficChartProps) => {
   const [processedData, setProcessedData] = useState<RouteWeekdayData[]>([]);
 
@@ -332,116 +351,113 @@ export const WeekdayTrafficChart = ({
     );
   }
 
+  const selectedDayLabel = dayFilter;
+
   return (
-    <div className="grid grid-cols-1 gap-6">
-      {processedData.map((route) => (
-        <Card key={route.name} className="bg-slate-700/30 border-slate-600 p-4">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-white">
-              {route.startingPoint && route.finishPoint
-                ? `${route.startingPoint} → ${route.finishPoint}`
-                : route.name}
-            </h3>
-            <p className="text-sm text-gray-400">
-              Average commute duration by weekday
-            </p>
-          </div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      {processedData.map((route) => {
+        const selectedWeekdaySeries = route.weekdays.find(
+          (weekdaySeries) => weekdaySeries.weekday === dayFilter
+        );
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {route.weekdays.map((weekdaySeries) => (
-              <div
-                key={`${route.name}-${weekdaySeries.weekday}`}
-                className="bg-slate-800/60 border border-slate-600 rounded-lg p-3 flex flex-col gap-2"
-              >
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-gray-200">
-                    {weekdaySeries.weekday}
-                  </h4>
-                  {weekdaySeries.changePercent !== null && (
-                    <span
-                      className={`text-xs font-medium ${
-                        weekdaySeries.changePercent > 0
-                          ? "text-red-400"
-                          : "text-green-400"
-                      }`}
+        return (
+          <Card
+            key={`${route.name}-${dayFilter}`}
+            className="bg-slate-700/30 border-slate-600 p-4"
+          >
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-white">
+                {route.startingPoint && route.finishPoint
+                  ? `${route.startingPoint} → ${route.finishPoint}`
+                  : route.name}
+              </h3>
+              <p className="text-sm text-gray-400">
+                {selectedDayLabel} commute duration trends
+              </p>
+            </div>
+
+            {selectedWeekdaySeries && selectedWeekdaySeries.data.length > 0 ? (
+              <div className="h-56">
+                <ChartContainer config={chartConfig} className="h-full w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={selectedWeekdaySeries.data}
+                      margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
                     >
-                      {weekdaySeries.changePercent > 0 ? "+" : ""}
-                      {weekdaySeries.changePercent}%
-                    </span>
-                  )}
+                      <XAxis
+                        dataKey="time"
+                        tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                        tickFormatter={(value) =>
+                          formatTimeLabel(value as string)
+                        }
+                      />
+                      <YAxis
+                        tick={{ fontSize: 10, fill: "#9CA3AF" }}
+                        domain={["dataMin - 5", "dataMax + 5"]}
+                      />
+                      <ChartTooltip
+                        content={<ChartTooltipContent />}
+                        labelFormatter={(value) =>
+                          formatTimeLabel(value as string)
+                        }
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="preDuration"
+                        stroke="#4A90E2"
+                        strokeWidth={2}
+                        dot={false}
+                        connectNulls
+                        name="Pre-congestion"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="postDuration"
+                        stroke="#2DD4BF"
+                        strokeWidth={2}
+                        dot={false}
+                        connectNulls
+                        name="Post-congestion"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </div>
+            ) : (
+              <div className="h-56 flex items-center justify-center text-sm text-gray-500">
+                No data available for {selectedDayLabel}
+              </div>
+            )}
+
+            {selectedWeekdaySeries && (
+              <div className="mt-4 text-xs text-gray-400 space-y-1">
+                <div className="flex justify-between">
+                  <span className="flex items-center gap-1">
+                    <span className="inline-block w-4 h-[3px] bg-[#4A90E2] rounded" />
+                    Pre avg: {selectedWeekdaySeries.preAvgDuration ?? "-"} min
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="inline-block w-4 h-[3px] bg-[#2DD4BF] rounded" />
+                    Post avg: {selectedWeekdaySeries.postAvgDuration ?? "-"} min
+                  </span>
                 </div>
-
-                {weekdaySeries.data.length === 0 ? (
-                  <div className="h-28 flex items-center justify-center text-xs text-gray-500">
-                    No data
-                  </div>
-                ) : (
-                  <div className="h-32">
-                    <ChartContainer
-                      config={chartConfig}
-                      className="h-full w-full"
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                          data={weekdaySeries.data}
-                          margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
-                        >
-                          <XAxis
-                            dataKey="time"
-                            tick={{ fontSize: 9, fill: "#9CA3AF" }}
-                            tickFormatter={(value) =>
-                              formatTimeLabel(value as string)
-                            }
-                          />
-                          <YAxis
-                            tick={{ fontSize: 9, fill: "#9CA3AF" }}
-                            domain={["dataMin - 5", "dataMax + 5"]}
-                          />
-                          <ChartTooltip
-                            content={<ChartTooltipContent />}
-                            labelFormatter={(value) =>
-                              formatTimeLabel(value as string)
-                            }
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="preDuration"
-                            stroke="#4A90E2"
-                            strokeWidth={2}
-                            dot={false}
-                            connectNulls
-                            name="Pre-congestion"
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="postDuration"
-                            stroke="#2DD4BF"
-                            strokeWidth={2}
-                            dot={false}
-                            connectNulls
-                            name="Post-congestion"
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
+                {selectedWeekdaySeries.changePercent !== null && (
+                  <div
+                    className={`text-right ${
+                      selectedWeekdaySeries.changePercent > 0
+                        ? "text-red-400"
+                        : "text-green-400"
+                    }`}
+                  >
+                    Change: {selectedWeekdaySeries.changePercent > 0 ? "+" : ""}
+                    {selectedWeekdaySeries.changePercent}%
                   </div>
                 )}
-
-                <div className="flex justify-between text-[10px] text-gray-400">
-                  <span>
-                    <span className="inline-block w-3 h-[3px] bg-[#4A90E2] mr-1 align-middle rounded" />
-                    Pre avg: {weekdaySeries.preAvgDuration ?? "-"} min
-                  </span>
-                  <span>
-                    <span className="inline-block w-3 h-[3px] bg-[#2DD4BF] mr-1 align-middle rounded" />
-                    Post avg: {weekdaySeries.postAvgDuration ?? "-"} min
-                  </span>
-                </div>
               </div>
-            ))}
-          </div>
-        </Card>
-      ))}
+            )}
+          </Card>
+        );
+      })}
     </div>
   );
 };
