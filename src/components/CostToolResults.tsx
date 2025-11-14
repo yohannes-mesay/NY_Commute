@@ -16,8 +16,8 @@ export const CostToolResults = ({ results }: CostToolResultsProps) => {
   return (
     <Card className="bg-slate-800/50 border-slate-700">
       <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-green-400" />
+        <CardTitle className="text-xl sm:text-2xl text-white flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-400" />
           Cost Comparison Results
         </CardTitle>
         <CardDescription className="text-gray-400">
@@ -26,8 +26,8 @@ export const CostToolResults = ({ results }: CostToolResultsProps) => {
       </CardHeader>
       <CardContent className="flex items-center justify-center h-64">
         <div className="text-center text-gray-400">
-          <Calculator className="h-16 w-16 mx-auto mb-4 opacity-50" />
-          <p>Complete the form to generate your cost comparison</p>
+          <Calculator className="h-14 w-14 sm:h-16 sm:w-16 mx-auto mb-4 opacity-50" />
+          <p className="text-sm sm:text-base">Complete the form to generate your cost comparison</p>
         </div>
       </CardContent>
     </Card>

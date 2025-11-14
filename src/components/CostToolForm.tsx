@@ -93,8 +93,8 @@ export const CostToolForm = ({
   return (
     <Card className="bg-slate-800/50 border-slate-700">
       <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
-          <MapPin className="h-5 w-5 text-blue-400" />
+        <CardTitle className="text-xl sm:text-2xl text-white flex items-center gap-2">
+          <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-blue-400" />
           Your Commute Details
         </CardTitle>
         <CardDescription className="text-gray-400">
@@ -224,11 +224,11 @@ export const CostToolForm = ({
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold text-white mb-4">
+          <h3 className="text-base sm:text-lg font-semibold text-white mb-4">
             Rank these in order of importance to you (1 = most important, 4 =
             least important):
           </h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Cost
@@ -352,7 +352,7 @@ export const CostToolForm = ({
             <Button
               type="button"
               variant="outline"
-              className="text-sm"
+              className="text-sm sm:text-base"
               onClick={() =>
                 setFormData({
                   ...formData,
@@ -371,7 +371,7 @@ export const CostToolForm = ({
         <Button
           onClick={onSubmit}
           disabled={!isFormValid() || isLoading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 text-sm sm:text-base"
         >
           {isLoading ? "Calculating..." : "Compare Options"}
         </Button>

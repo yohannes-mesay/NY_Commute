@@ -138,10 +138,10 @@ export const CommuteResults = ({ results }: CommuteResultsProps) => {
   return (
     <>
       {/* Bar Charts */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader className="pb-2">
-            <CardTitle className="text-white text-lg">
+            <CardTitle className="text-white text-lg sm:text-xl">
               Daily Roundtrip Cost
             </CardTitle>
           </CardHeader>
@@ -169,7 +169,7 @@ export const CommuteResults = ({ results }: CommuteResultsProps) => {
 
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader className="pb-2">
-            <CardTitle className="text-white text-lg">
+            <CardTitle className="text-white text-lg sm:text-xl">
               Weekly Roundtrip Cost
             </CardTitle>
           </CardHeader>
@@ -197,7 +197,7 @@ export const CommuteResults = ({ results }: CommuteResultsProps) => {
 
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader className="pb-2">
-            <CardTitle className="text-white text-lg">
+            <CardTitle className="text-white text-lg sm:text-xl">
               Monthly Roundtrip Cost
             </CardTitle>
           </CardHeader>
@@ -259,10 +259,10 @@ export const CommuteResults = ({ results }: CommuteResultsProps) => {
           </CardContent>
         </Card> */}
 
-        <Card className="bg-slate-800/50 border-slate-700 col-span-2">
+        <Card className="bg-slate-800/50 border-slate-700 lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Award className="h-5 w-5 text-yellow-400" />
+            <CardTitle className="text-xl sm:text-2xl text-white flex items-center gap-2">
+              <Award className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-400" />
               Smart Recommendation
             </CardTitle>
             <CardDescription className="text-gray-400">
@@ -272,17 +272,17 @@ export const CommuteResults = ({ results }: CommuteResultsProps) => {
           <CardContent className="flex flex-col justify-center h-64">
             <div>
               <div className="mb-4">
-                <h3 className="text-xl font-bold text-white mb-2">
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
                   Your best commuting option is:
                 </h3>
-                <div className="text-3xl font-bold text-[#235CE5] mb-4">
+                <div className="text-2xl sm:text-3xl font-bold text-[#235CE5] mb-4">
                   {results.recommendation.method}
                 </div>
               </div>
-              <p className="text-gray-300 text-md leading-relaxed">
+              <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
                 {results.recommendation.reason}
               </p>
-              <ul className="text-gray-300 leading-relaxed list-disc list-inside text-sm">
+              <ul className="text-gray-300 leading-relaxed list-disc list-inside text-xs sm:text-sm">
                 <li>
                   <span className="font-bold">Cost-</span>{" "}
                   {results.recommendation.data.cost}
