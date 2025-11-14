@@ -1,16 +1,42 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Calculator, TrendingUp } from "lucide-react";
 import { CommuteResults, Results } from "@/components/CommuteResults";
 import { CommuteResults as CommuteResultsType } from "@/types/commute";
+import { CostBarChart } from "@/components/CostBarChart";
 
 interface CostToolResultsProps {
   results: CommuteResultsType | null;
+  commuteOrigin?: string | null;
+  commuteDaysPerWeek?: number;
 }
 
-export const CostToolResults = ({ results }: CostToolResultsProps) => {
+export const CostToolResults = ({
+  results,
+  commuteOrigin,
+  commuteDaysPerWeek,
+}: CostToolResultsProps) => {
   if (results) {
-    return <CommuteResults results={results as Results} />;
+    const typedResults = results as Results;
+    return (
+      <div className="space-y-6">
+        {commuteOrigin &&
+          typeof commuteDaysPerWeek === "number" &&
+          commuteDaysPerWeek > 0 && (
+            <CostBarChart
+              commuteOrigin={commuteOrigin}
+              commuteDaysPerWeek={commuteDaysPerWeek}
+            />
+          )}
+        <CommuteResults results={typedResults} showComparisonCharts={false} />
+      </div>
+    );
   }
 
   return (

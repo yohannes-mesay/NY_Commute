@@ -12,8 +12,8 @@ export const computeRecommendation = (
 ): RecommendationResult => {
   const MAX_RANK = 4;
   const WEIGHTS = {
-    "NJ Transit": { cost: 4, comfort: 1, onTime: 1, stress: 1 },
-    Boxcar: { cost: 2, comfort: 4, onTime: 3, stress: 4 },
+    "NJ Transit": { cost: 4, comfort: 2, onTime: 2, stress: 2 },
+    Boxcar: { cost: 2, comfort: 4, onTime: 2, stress: 4 },
     Uber: { cost: 1, comfort: 4, onTime: 3, stress: 3 },
     "Self Drive": { cost: 3, comfort: 2, onTime: 4, stress: 1 },
   } as const;

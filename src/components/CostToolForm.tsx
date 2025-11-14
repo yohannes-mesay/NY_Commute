@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import {
   Select,
@@ -6,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,6 +21,7 @@ import { COMMUTE_METHODS, DEPARTURE_TIMES } from "@/constants/commute";
 import { useNJTransitStations } from "@/hooks/useNJTransitStations";
 import { CommuteFormData } from "@/types/commute";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OpenStreetMapProvider } from "leaflet-geosearch";
 
 interface CostToolFormProps {
   formData: CommuteFormData;
@@ -40,6 +42,77 @@ export const CostToolForm = ({
     error: stationsError,
   } = useNJTransitStations();
 
+  const [addressQuery, setAddressQuery] = useState<string>(
+    formData.office_address ?? ""
+  );
+  const [addressSuggestions, setAddressSuggestions] = useState<
+    Array<{ label: string }>
+  >([]);
+  const [isAddressSearching, setIsAddressSearching] = useState(false);
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+
+  const addressProvider = useMemo(
+    () =>
+      new OpenStreetMapProvider({
+        params: {
+          countrycodes: "us",
+          addressdetails: 1,
+        },
+      }),
+    []
+  );
+
+  useEffect(() => {
+    setAddressQuery(formData.office_address ?? "");
+  }, [formData.office_address]);
+
+  useEffect(() => {
+    const query = addressQuery.trim();
+    if (query.length < 3) {
+      setAddressSuggestions([]);
+      setIsAddressSearching(false);
+      return;
+    }
+
+    let isActive = true;
+    setIsAddressSearching(true);
+    const debounceId = setTimeout(async () => {
+      try {
+        const results = await addressProvider.search({ query });
+        if (!isActive) {
+          return;
+        }
+        setAddressSuggestions(results.slice(0, 5));
+      } catch {
+        if (isActive) {
+          setAddressSuggestions([]);
+        }
+      } finally {
+        if (isActive) {
+          setIsAddressSearching(false);
+        }
+      }
+    }, 350);
+
+    return () => {
+      isActive = false;
+      clearTimeout(debounceId);
+    };
+  }, [addressProvider, addressQuery]);
+
+  const handleAddressChange = (value: string) => {
+    setAddressQuery(value);
+    setFormData({ ...formData, office_address: value });
+    setShowAddressSuggestions(true);
+  };
+
+  const handleAddressSelect = (value: string) => {
+    setAddressQuery(value);
+    setFormData({ ...formData, office_address: value });
+    setShowAddressSuggestions(false);
+    setAddressSuggestions([]);
+  };
+
   // Ranking helpers
   const selectedRanks = {
     cost: formData.ranking_cost,
@@ -48,17 +121,17 @@ export const CostToolForm = ({
     stress: formData.ranking_stress,
   };
 
-  const getDisabledFor = (
-    currentField: keyof typeof selectedRanks,
-    num: number
-  ) => {
-    const value = num.toString();
-    return (
-      (currentField !== "cost" && selectedRanks.cost === value) ||
-      (currentField !== "comfort" && selectedRanks.comfort === value) ||
-      (currentField !== "onTime" && selectedRanks.onTime === value) ||
-      (currentField !== "stress" && selectedRanks.stress === value)
-    );
+  const rankingOptions = ["1", "2", "3", "4"] as const;
+
+  const getOptionsFor = (currentField: keyof typeof selectedRanks) => {
+    return rankingOptions.filter((option) => {
+      if (selectedRanks[currentField] === option) {
+        return true;
+      }
+      return !Object.entries(selectedRanks).some(
+        ([field, value]) => field !== currentField && value === option
+      );
+    });
   };
 
   const areAllRanksChosen =
@@ -212,15 +285,46 @@ export const CostToolForm = ({
           <label className="block text-sm font-medium text-gray-300 mb-2">
             What is your office's address?
           </label>
-          <Textarea
-            value={formData.office_address}
-            onChange={(e) =>
-              setFormData({ ...formData, office_address: e.target.value })
-            }
-            placeholder="Enter your office address..."
-            className="bg-slate-700 border-slate-600 text-white placeholder-gray-400"
-            rows={3}
-          />
+          <div className="relative">
+            <Input
+              value={addressQuery}
+              onChange={(e) => handleAddressChange(e.target.value)}
+              onFocus={() => setShowAddressSuggestions(true)}
+              onBlur={() => {
+                setTimeout(() => setShowAddressSuggestions(false), 150);
+              }}
+              placeholder="Start typing your office address..."
+              className="bg-slate-700 border-slate-600 text-white placeholder-gray-400"
+            />
+            {showAddressSuggestions && (
+              <div className="absolute left-0 right-0 z-30 mt-2 max-h-60 overflow-y-auto rounded-lg border border-slate-600 bg-slate-800/95 shadow-xl">
+                {isAddressSearching ? (
+                  <div className="px-4 py-3 text-sm text-gray-400">
+                    Searching addresses...
+                  </div>
+                ) : addressSuggestions.length === 0 &&
+                  addressQuery.trim().length >= 3 ? (
+                  <div className="px-4 py-3 text-sm text-gray-400">
+                    No matching addresses found.
+                  </div>
+                ) : (
+                  addressSuggestions.map((suggestion, index) => (
+                    <button
+                      key={`${suggestion.label}-${index}`}
+                      type="button"
+                      className="flex w-full items-start px-4 py-3 text-left text-sm text-gray-200 hover:bg-slate-700/70"
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        handleAddressSelect(suggestion.label);
+                      }}
+                    >
+                      {suggestion.label}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <div>
@@ -243,14 +347,13 @@ export const CostToolForm = ({
                   <SelectValue placeholder="Rank" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
-                  {[1, 2, 3, 4].map((num) => (
+                  {getOptionsFor("cost").map((option) => (
                     <SelectItem
-                      key={num}
-                      value={num.toString()}
-                      disabled={getDisabledFor("cost", num)}
+                      key={option}
+                      value={option}
                       className="text-white hover:bg-slate-600"
                     >
-                      {num}
+                      {option}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -271,14 +374,13 @@ export const CostToolForm = ({
                   <SelectValue placeholder="Rank" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
-                  {[1, 2, 3, 4].map((num) => (
+                  {getOptionsFor("comfort").map((option) => (
                     <SelectItem
-                      key={num}
-                      value={num.toString()}
-                      disabled={getDisabledFor("comfort", num)}
+                      key={option}
+                      value={option}
                       className="text-white hover:bg-slate-600"
                     >
-                      {num}
+                      {option}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -299,14 +401,13 @@ export const CostToolForm = ({
                   <SelectValue placeholder="Rank" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
-                  {[1, 2, 3, 4].map((num) => (
+                  {getOptionsFor("onTime").map((option) => (
                     <SelectItem
-                      key={num}
-                      value={num.toString()}
-                      disabled={getDisabledFor("onTime", num)}
+                      key={option}
+                      value={option}
                       className="text-white hover:bg-slate-600"
                     >
-                      {num}
+                      {option}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -327,26 +428,19 @@ export const CostToolForm = ({
                   <SelectValue placeholder="Rank" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
-                  {[1, 2, 3, 4].map((num) => (
+                  {getOptionsFor("stress").map((option) => (
                     <SelectItem
-                      key={num}
-                      value={num.toString()}
-                      disabled={getDisabledFor("stress", num)}
+                      key={option}
+                      value={option}
                       className="text-white hover:bg-slate-600"
                     >
-                      {num}
+                      {option}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
-
-          {rankingError && (
-            <p className="mt-2 text-sm text-red-400">
-              Please use each rank (1–4) exactly once across all categories.
-            </p>
-          )}
 
           <div className="mt-3">
             <Button
@@ -375,6 +469,11 @@ export const CostToolForm = ({
         >
           {isLoading ? "Calculating..." : "Compare Options"}
         </Button>
+        {rankingError && (
+          <p className="mt-3 text-sm text-red-400 text-center">
+            Please use each rank (1–4) exactly once across all categories.
+          </p>
+        )}
       </CardContent>
     </Card>
   );

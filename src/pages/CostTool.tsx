@@ -1,8 +1,16 @@
 import { Calculator } from "lucide-react";
 import { CostToolForm } from "@/components/CostToolForm";
 import { CostToolResults } from "@/components/CostToolResults";
-import { CostBarChart } from "@/components/CostBarChart";
+import { CommuteComparisonCharts, Results } from "@/components/CommuteResults";
 import { useCommuteForm } from "@/hooks/useCommuteForm";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { BarChart3 } from "lucide-react";
 
 const CostTool = () => {
   const { formData, setFormData, results, isLoading, handleSubmit } =
@@ -44,19 +52,36 @@ const CostTool = () => {
 
           {/* Results - Right Side */}
           <div className="space-y-6">
-            <CostToolResults results={results} />
-          </div>
-        </div>
-
-        {/* Cost Bar Chart */}
-        {formData.commute_origin && formData.days_per_week[0] > 0 && (
-          <div className="mt-8">
-            <CostBarChart
+            <CostToolResults
+              results={results}
               commuteOrigin={formData.commute_origin}
               commuteDaysPerWeek={formData.days_per_week[0]}
             />
           </div>
-        )}
+        </div>
+
+        <div className="mt-12">
+          {results ? (
+            <CommuteComparisonCharts results={results as Results} />
+          ) : (
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-blue-400" />
+                  Cost Comparison Charts
+                </CardTitle>
+                <CardDescription className="text-gray-400">
+                  Complete the form to view daily, weekly, and monthly cost
+                  comparisons across commute modes.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-sm text-gray-400">
+                Once you calculate your commute, charts will appear here showing
+                how costs stack up over different timeframes.
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );

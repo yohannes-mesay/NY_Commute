@@ -189,12 +189,6 @@ export const useCommuteForm = () => {
       );
 
       setResults(commuteResults);
-
-      toast({
-        title: "Success!",
-        description:
-          "Your preferences have been saved and cost comparison is ready!",
-      });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error occurred";

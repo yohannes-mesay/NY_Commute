@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -16,9 +16,9 @@ import {
 } from "@/components/ui/card";
 import { TrafficChart } from "@/components/TrafficChart";
 import { WeekdayTrafficChart } from "@/components/WeekdayTrafficChart";
-import { NewsSection } from "@/components/NewsSection";
 import TimeHeatMap from "@/components/TimeHeatMap";
 import { HistoricalTrendChart } from "@/components/HistoricalTrendChart";
+import { RollingAverageChart } from "@/components/RollingAverageChart";
 
 const Dashboard = () => {
   const [timeFilter, setTimeFilter] = useState<"morning" | "afternoon">(
@@ -28,6 +28,9 @@ const Dashboard = () => {
     "morning" | "afternoon"
   >("morning");
   const [historicalTimeFilter, setHistoricalTimeFilter] = useState<
+    "morning" | "afternoon"
+  >("morning");
+  const [rollingTimeFilter, setRollingTimeFilter] = useState<
     "morning" | "afternoon"
   >("morning");
   const weekdayOptions = [
@@ -50,6 +53,28 @@ const Dashboard = () => {
       finishPoint: string | null;
     }>
   >([]);
+  const [rollingRoute, setRollingRoute] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (availableRoutes.length === 0) {
+      setRollingRoute(null);
+      return;
+    }
+    if (
+      !rollingRoute ||
+      !availableRoutes.some((route) => route.name === rollingRoute)
+    ) {
+      setRollingRoute(availableRoutes[0].name);
+    }
+  }, [availableRoutes, rollingRoute]);
+
+  const rollingRouteInfo = rollingRoute
+    ? availableRoutes.find((route) => route.name === rollingRoute)
+    : null;
+  const rollingRouteLabel =
+    rollingRouteInfo?.startingPoint && rollingRouteInfo?.finishPoint
+      ? `${rollingRouteInfo.startingPoint} → ${rollingRouteInfo.finishPoint}`
+      : rollingRoute ?? undefined;
 
   return (
     <div className="relative min-h-screen pt-24 pb-16">
@@ -316,6 +341,87 @@ const Dashboard = () => {
                 routes={availableRoutes}
                 onRoutesChange={setAvailableRoutes}
               />
+            </CardContent>
+          </Card>
+
+          {/* Rolling Average Commute Duration */}
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <CardTitle className="text-xl sm:text-2xl text-white">
+                    Rolling Average Commute Duration
+                  </CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Seven-day rolling average commute times before and after
+                    congestion pricing (January 5, 2025). Data is shown only for
+                    weekdays and US federal bank holidays are excluded.
+                  </CardDescription>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setRollingTimeFilter("morning")}
+                      variant={
+                        rollingTimeFilter === "morning" ? "outline" : "default"
+                      }
+                      className={`text-sm sm:text-base ${
+                        rollingTimeFilter === "morning"
+                          ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
+                          : "bg-slate-700 hover:bg-slate-600"
+                      }`}
+                    >
+                      Morning
+                    </Button>
+                    <Button
+                      onClick={() => setRollingTimeFilter("afternoon")}
+                      variant={
+                        rollingTimeFilter === "afternoon"
+                          ? "outline"
+                          : "default"
+                      }
+                      className={`text-sm sm:text-base ${
+                        rollingTimeFilter === "afternoon"
+                          ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
+                          : "bg-slate-700 hover:bg-slate-600"
+                      }`}
+                    >
+                      Afternoon
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    {availableRoutes.slice(0, 3).map((route) => (
+                      <Button
+                        key={route.name}
+                        onClick={() => setRollingRoute(route.name)}
+                        variant={
+                          rollingRoute === route.name ? "outline" : "default"
+                        }
+                        className={`text-sm sm:text-base ${
+                          rollingRoute === route.name
+                            ? "bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
+                            : "bg-slate-700 hover:bg-slate-600"
+                        }`}
+                      >
+                        {route.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {rollingRoute ? (
+                <RollingAverageChart
+                  timeFilter={rollingTimeFilter}
+                  routeName={rollingRoute}
+                  routeLabel={rollingRouteLabel}
+                />
+              ) : (
+                <div className="h-80 flex items-center justify-center text-sm text-gray-400">
+                  Loading routes...
+                </div>
+              )}
             </CardContent>
           </Card>
         </section>

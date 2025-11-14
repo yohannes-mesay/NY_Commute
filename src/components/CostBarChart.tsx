@@ -21,20 +21,12 @@ import {
 import { useCostComparison } from "@/hooks/useCostComparison";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Payload } from "recharts/types/component/DefaultTooltipContent";
+import { MODE_COLORS } from "@/constants/commute";
 
 interface CostBarChartProps {
   commuteOrigin: string;
   commuteDaysPerWeek: number;
 }
-
-const MODE_COLORS: Record<string, string> = {
-  njTransit: "#1f77b4",
-  boxcar: "#ff7f0e",
-  boxcarMember: "#ffbb78",
-  selfDrive: "#2ca02c",
-  uber: "#d62728",
-  luxuryCar: "#9467bd",
-};
 
 const MODE_LABELS: Record<string, string> = {
   njTransit: "NJ Transit",

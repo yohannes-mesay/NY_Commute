@@ -56,3 +56,14 @@ export const DEPARTURE_TIMES = [
   "7:30 - 8:00am",
   "After 8:00am",
 ];
+
+export const MODE_COLORS: Record<string, string> = {
+  selfDrive: "#DC2626", // self driving - red
+  driving: "#DC2626",
+  njTransit: "#7F1D1D", // dark red
+  boxcar: "#1D4ED8", // blue
+  boxcarMember: "#60A5FA", // light blue
+  uber: "#7E22CE", // purple
+  luxuryCar: "#16A34A", // green
+  luxury: "#16A34A",
+};
