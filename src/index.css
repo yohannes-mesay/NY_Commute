@@ -102,10 +102,19 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    background-color: #0f172a;
     background-image: url('/lovable-uploads/a5191f41-0edc-42d3-925d-2e4537cc2703.png');
-    background-size: 100% auto;
+    background-size: cover;
     background-position: center top;
     background-attachment: fixed;
-    background-repeat: repeat-y;
+    background-repeat: no-repeat;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll;
+    background-size: cover;
+    background-position: top center;
   }
 }

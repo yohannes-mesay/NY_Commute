@@ -298,7 +298,7 @@ export const HistoricalTrendChart = ({
     );
 
     setProcessedData(processedRoutes);
-  }, [commutingData, error, timeFilter, selectedRoute]);
+  }, [commutingData, error, timeFilter, selectedRoute, onRoutesChange]);
 
   const chartConfig = {
     duration: {
@@ -378,6 +378,20 @@ export const HistoricalTrendChart = ({
             <Legend
               wrapperStyle={{ fontSize: "12px", color: "#9CA3AF" }}
               iconType="line"
+              payload={[
+                {
+                  value: "Pre-Congestion Pricing",
+                  type: "line",
+                  id: "preDuration",
+                  color: "#4A90E2",
+                },
+                {
+                  value: "Post-Congestion Pricing",
+                  type: "line",
+                  id: "postDuration",
+                  color: "#2DD4BF",
+                },
+              ]}
             />
             <Line
               type="monotone"
