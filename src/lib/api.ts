@@ -337,7 +337,7 @@ export const saveCommuteFormInput = async (
       .from("ccccommuteforminputs")
       .insert([dbPayload])
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       throw error;
