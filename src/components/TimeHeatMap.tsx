@@ -202,6 +202,11 @@ const buildHeatmap = (data: CommuteDataRow[]): HeatmapRoute[] => {
 
         const rows: HeatmapRow[] = Array.from(periodMap.entries())
           .sort((a, b) => parseTimeToMinutes(a[0]) - parseTimeToMinutes(b[0]))
+          .filter(([time]) => {
+            const timeInMinutes = parseTimeToMinutes(time);
+            // Filter out times before 5:15 AM (315 minutes)
+            return timeInMinutes >= 315;
+          })
           .map(([time, dayMap]) => {
             const values: Record<string, number | null> = {};
 
