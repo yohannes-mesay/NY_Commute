@@ -14,6 +14,7 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+import type { TooltipProps } from "recharts";
 import { useCommuteData } from "@/hooks/useCommuteData";
 import type { CommuteDataRow } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -308,7 +309,7 @@ export const HistoricalTrendChart = ({
 
   if (isLoading) {
     return (
-      <div className="h-96 flex items-center justify-center">
+      <div className="h-80 sm:h-96 flex items-center justify-center">
         <Skeleton className="h-full w-full bg-slate-700/60" />
       </div>
     );
@@ -316,16 +317,18 @@ export const HistoricalTrendChart = ({
 
   if (error) {
     return (
-      <div className="h-96 flex items-center justify-center">
-        <p className="text-red-400">Error loading data: {error.message}</p>
+      <div className="h-80 sm:h-96 flex items-center justify-center">
+        <p className="text-red-400 text-sm px-4 text-center">
+          Error loading data: {error.message}
+        </p>
       </div>
     );
   }
 
   if (processedData.length === 0) {
     return (
-      <div className="h-96 flex items-center justify-center">
-        <p className="text-gray-400">No data available</p>
+      <div className="h-80 sm:h-96 flex items-center justify-center">
+        <p className="text-gray-400 text-sm">No data available</p>
       </div>
     );
   }
@@ -338,102 +341,136 @@ export const HistoricalTrendChart = ({
 
   if (!routeToDisplay) {
     return (
-      <div className="h-96 flex items-center justify-center">
-        <p className="text-gray-400">No route data available</p>
+      <div className="h-80 sm:h-96 flex items-center justify-center">
+        <p className="text-gray-400 text-sm">No route data available</p>
       </div>
     );
   }
 
   return (
-    <div className="h-96">
-      <ChartContainer config={chartConfig} className="h-full w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={routeToDisplay.data}
-            margin={{ top: 5, right: 30, left: 20, bottom: 20 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 10, fill: "#9CA3AF" }}
-              tickFormatter={(value) => formatDate(value as string)}
-              angle={-45}
-              textAnchor="end"
-              height={60}
-            />
-            <YAxis
-              tick={{ fontSize: 10, fill: "#9CA3AF" }}
-              domain={["dataMin - 10", "dataMax + 10"]}
-              label={{
-                value: "Duration (minutes)",
-                angle: -90,
-                position: "insideLeft",
-                style: { fill: "#9CA3AF", fontSize: 12 },
+    <div className="h-80 sm:h-96 w-full overflow-x-auto">
+      <div className="min-w-[600px] sm:min-w-0 h-full">
+        <ChartContainer config={chartConfig} className="h-full w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={routeToDisplay.data}
+              margin={{
+                top: 5,
+                right: 10,
+                left: 5,
+                bottom: 60,
               }}
-            />
-            <ChartTooltip
-              content={<ChartTooltipContent />}
-              labelFormatter={(value) => formatDate(value as string)}
-            />
-            <Legend
-              wrapperStyle={{ fontSize: "12px", color: "#9CA3AF" }}
-              iconType="line"
-              payload={[
-                {
-                  value: "Pre-Congestion Pricing",
-                  type: "line",
-                  id: "preDuration",
-                  color: "#4A90E2",
-                },
-                {
-                  value: "Post-Congestion Pricing",
-                  type: "line",
-                  id: "postDuration",
-                  color: "#2DD4BF",
-                },
-              ]}
-            />
-            <Line
-              type="monotone"
-              dataKey="preDuration"
-              stroke="#4A90E2"
-              strokeWidth={2}
-              dot={false}
-              connectNulls
-              name="Pre-Congestion Pricing"
-            />
-            <Line
-              type="monotone"
-              dataKey="postDuration"
-              stroke="#2DD4BF"
-              strokeWidth={2}
-              dot={false}
-              connectNulls
-              name="Post-Congestion Pricing"
-            />
-            <Line
-              type="linear"
-              dataKey="preTrend"
-              stroke="#4A90E2"
-              strokeWidth={1.5}
-              strokeDasharray="5 5"
-              dot={false}
-              connectNulls
-              name="Linear (Pre-Congestion Pricing)"
-            />
-            <Line
-              type="linear"
-              dataKey="postTrend"
-              stroke="#2DD4BF"
-              strokeWidth={1.5}
-              strokeDasharray="5 5"
-              dot={false}
-              connectNulls
-              name="Linear (Post-Congestion Pricing)"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </ChartContainer>
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 9, fill: "#9CA3AF" }}
+                tickFormatter={(value) => formatDate(value as string)}
+                angle={-45}
+                textAnchor="end"
+                height={60}
+                interval="preserveStartEnd"
+              />
+              <YAxis
+                tick={{ fontSize: 9, fill: "#9CA3AF" }}
+                domain={["dataMin - 10", "dataMax + 10"]}
+                width={40}
+                label={{
+                  value: "Duration (minutes)",
+                  angle: -90,
+                  position: "insideLeft",
+                  style: { fill: "#9CA3AF", fontSize: 10 },
+                }}
+              />
+              <ChartTooltip
+                content={(props: TooltipProps<string, number>) => {
+                  if (!props.payload) return null;
+                  // Filter out the "Linear (Pre-Congestion Pricing)" and "Linear (Post-Congestion Pricing)" lines from tooltip
+                  const filteredPayload = props.payload.filter(
+                    (item) => item.dataKey !== "postTrend" && item.dataKey !== "preTrend"
+                  );
+                  return (
+                    <ChartTooltipContent
+                      {...props}
+                      payload={filteredPayload}
+                      labelFormatter={(value) => formatDate(value as string)}
+                      formatter={(value, name, item) => {
+                        return (
+                          <div className="flex items-center justify-between gap-6 w-full">
+                            <span className="text-muted-foreground">
+                              {name}
+                            </span>
+                            <span className="font-mono font-medium tabular-nums text-foreground ml-4">
+                              {typeof value === "number" ? value.toLocaleString() : value}
+                            </span>
+                          </div>
+                        );
+                      }}
+                    />
+                  );
+                }}
+                labelFormatter={(value) => formatDate(value as string)}
+              />
+              <Legend
+                wrapperStyle={{ fontSize: "10px", color: "#9CA3AF" }}
+                iconType="line"
+                payload={[
+                  {
+                    value: "Pre-Congestion Pricing",
+                    type: "line",
+                    id: "preDuration",
+                    color: "#4A90E2",
+                  },
+                  {
+                    value: "Post-Congestion Pricing",
+                    type: "line",
+                    id: "postDuration",
+                    color: "#2DD4BF",
+                  },
+                ]}
+              />
+              <Line
+                type="monotone"
+                dataKey="preDuration"
+                stroke="#4A90E2"
+                strokeWidth={2}
+                dot={false}
+                connectNulls
+                name="Pre-Congestion Pricing"
+              />
+              <Line
+                type="monotone"
+                dataKey="postDuration"
+                stroke="#2DD4BF"
+                strokeWidth={2}
+                dot={false}
+                connectNulls
+                name="Post-Congestion Pricing"
+              />
+              <Line
+                type="linear"
+                dataKey="preTrend"
+                stroke="#4A90E2"
+                strokeWidth={1.5}
+                strokeDasharray="5 5"
+                dot={false}
+                connectNulls
+                name="Linear (Pre-Congestion Pricing)"
+              />
+              <Line
+                type="linear"
+                dataKey="postTrend"
+                stroke="#2DD4BF"
+                strokeWidth={1.5}
+                strokeDasharray="5 5"
+                dot={false}
+                connectNulls
+                name="Linear (Post-Congestion Pricing)"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartContainer>
+      </div>
     </div>
   );
 };
