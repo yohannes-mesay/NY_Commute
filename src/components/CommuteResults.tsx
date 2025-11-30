@@ -133,12 +133,20 @@ const ChartTooltipContentWrapper = ({
   label,
 }: TooltipProps<string, number>) => {
   if (active && payload && payload.length) {
+    const value = Number(payload[0].value);
+    const isBoxcar = label === "Boxcar" || label === "Boxcar (Member)";
+    const isUnavailable = isBoxcar && value === 0;
+
     return (
       <div className="bg-slate-800 p-3 rounded-lg border border-slate-600 shadow-lg">
         <p className="text-white font-medium">{label}</p>
-        <p className="text-green-400">
-          Cost: ${Number(payload[0].value).toFixed(2)}
-        </p>
+        {isUnavailable ? (
+          <p className="text-gray-400 text-sm italic">Not available</p>
+        ) : (
+          <p className="text-green-400">
+            Cost: ${value.toFixed(2)}
+          </p>
+        )}
       </div>
     );
   }
