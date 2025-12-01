@@ -21,7 +21,6 @@ import { COMMUTE_METHODS, DEPARTURE_TIMES } from "@/constants/commute";
 import { useNJTransitStations } from "@/hooks/useNJTransitStations";
 import { CommuteFormData } from "@/types/commute";
 import { Skeleton } from "@/components/ui/skeleton";
-import { OpenStreetMapProvider } from "leaflet-geosearch";
 
 interface CostToolFormProps {
   formData: CommuteFormData;
@@ -46,21 +45,12 @@ export const CostToolForm = ({
     formData.office_address ?? ""
   );
   const [addressSuggestions, setAddressSuggestions] = useState<
-    Array<{ label: string }>
+    Array<{ label: string; formatted: string }>
   >([]);
   const [isAddressSearching, setIsAddressSearching] = useState(false);
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
 
-  const addressProvider = useMemo(
-    () =>
-      new OpenStreetMapProvider({
-        params: {
-          countrycodes: "us",
-          addressdetails: 1,
-        },
-      }),
-    []
-  );
+  const GEOAPIFY_API_KEY = import.meta.env.VITE_GEOAPIFY_API_KEY;
 
   useEffect(() => {
     setAddressQuery(formData.office_address ?? "");
@@ -68,7 +58,7 @@ export const CostToolForm = ({
 
   useEffect(() => {
     const query = addressQuery.trim();
-    if (query.length < 3) {
+    if (query.length < 3 || !GEOAPIFY_API_KEY) {
       setAddressSuggestions([]);
       setIsAddressSearching(false);
       return;
@@ -78,12 +68,43 @@ export const CostToolForm = ({
     setIsAddressSearching(true);
     const debounceId = setTimeout(async () => {
       try {
-        const results = await addressProvider.search({ query });
+        const response = await fetch(
+          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
+            query
+          )}&apiKey=${GEOAPIFY_API_KEY}&filter=countrycode:us&limit=5`
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch addresses");
+        }
+
+        const data = (await response.json()) as {
+          features?: Array<{
+            properties: {
+              formatted?: string;
+              address_line1?: string;
+            };
+          }>;
+        };
+
         if (!isActive) {
           return;
         }
-        setAddressSuggestions(results.slice(0, 5));
-      } catch {
+
+        const suggestions = (data.features || []).map((feature) => ({
+          label:
+            feature.properties.formatted ||
+            feature.properties.address_line1 ||
+            query,
+          formatted:
+            feature.properties.formatted ||
+            feature.properties.address_line1 ||
+            query,
+        }));
+
+        setAddressSuggestions(suggestions);
+      } catch (error) {
+        console.error("Error fetching address suggestions:", error);
         if (isActive) {
           setAddressSuggestions([]);
         }
@@ -98,7 +119,7 @@ export const CostToolForm = ({
       isActive = false;
       clearTimeout(debounceId);
     };
-  }, [addressProvider, addressQuery]);
+  }, [addressQuery, GEOAPIFY_API_KEY]);
 
   const handleAddressChange = (value: string) => {
     setAddressQuery(value);
@@ -310,12 +331,12 @@ export const CostToolForm = ({
                 ) : (
                   addressSuggestions.map((suggestion, index) => (
                     <button
-                      key={`${suggestion.label}-${index}`}
+                      key={`${suggestion.formatted}-${index}`}
                       type="button"
                       className="flex w-full items-start px-4 py-3 text-left text-sm text-gray-200 hover:bg-slate-700/70"
                       onMouseDown={(event) => {
                         event.preventDefault();
-                        handleAddressSelect(suggestion.label);
+                        handleAddressSelect(suggestion.formatted);
                       }}
                     >
                       {suggestion.label}
